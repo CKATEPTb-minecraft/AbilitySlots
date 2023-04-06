@@ -161,7 +161,17 @@ public class LivingEntityAbilityUser extends LivingEntityAbilityTarget implement
     }
 
     @Override
+    public boolean hasCooldown(Ability ability) {
+        return false;
+    }
+
+    @Override
     public boolean hasCooldown(AbilityDeclaration declaration) {
+        return false;
+    }
+
+    @Override
+    public boolean hasCooldown(Class<? extends Ability> type) {
         return false;
     }
 
@@ -177,7 +187,6 @@ public class LivingEntityAbilityUser extends LivingEntityAbilityTarget implement
 
     @Override
     public void setAbilityContainer(AbilityContainer slotContainer) {
-
     }
 
     @Override
