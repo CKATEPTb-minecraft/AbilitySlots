@@ -6,11 +6,13 @@ import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.slf4j.Logger;
 
-import java.util.function.Supplier;
-
 public class AbilitySlots extends JavaPlugin {
     private static AbilitySlots plugin;
-    public final static Supplier<Logger> log = () -> plugin.getSLF4JLogger();
+    private static Logger logger;
+
+    public static Logger log() {
+        return logger;
+    }
 
     public static AbilitySlots getPlugin() {
         return plugin;
@@ -18,6 +20,7 @@ public class AbilitySlots extends JavaPlugin {
 
     public AbilitySlots() {
         plugin = this;
+        logger = this.getSLF4JLogger();
         IoC.scan(AbilitySlots.class);
         IoC.registerBean(this);
     }
