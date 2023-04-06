@@ -18,7 +18,7 @@ plugins {
     id("io.papermc.paperweight.userdev").version("1.3.8")
 }
 group = "dev.ckateptb.minecraft"
-version = "1.3.0-SNAPSHOT"
+version = "2.0.0-SNAPSHOT"
 
 val rootPackage = "${project.group}.${project.name.toLowerCase()}"
 val internal = "${rootPackage}.internal"
@@ -26,7 +26,7 @@ val internal = "${rootPackage}.internal"
 repositories {
     mavenCentral()
     maven("https://repo.animecraft.fun/repository/maven-snapshots/")
-    maven("https://repo.minebench.de/")
+//    maven("https://repo.minebench.de/")
 }
 
 dependencies {
@@ -39,7 +39,7 @@ dependencies {
     compileOnly("dev.ckateptb.minecraft:Caffeine:+")
     compileOnly("dev.ckateptb.minecraft:Supervisor:+")
 
-    implementation("de.themoep:minedown:1.7.1-SNAPSHOT")
+//    implementation("de.themoep:minedown:1.7.1-SNAPSHOT")
 
     compileOnly("org.projectlombok:lombok:+")
     annotationProcessor("org.projectlombok:lombok:+")
