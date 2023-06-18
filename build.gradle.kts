@@ -35,7 +35,7 @@ dependencies {
     compileOnly("dev.ckateptb.minecraft:Nicotine:+")
     compileOnly("dev.ckateptb.minecraft:Atom:+")
     compileOnly("dev.ckateptb.minecraft:Varflex:1.0.2-SNAPSHOT")
-    compileOnly("dev.ckateptb.minecraft:Colliders:1.2.2-SNAPSHOT")
+    compileOnly("dev.ckateptb.minecraft:Colliders:1.2.4-SNAPSHOT")
     compileOnly("dev.ckateptb.minecraft:Caffeine:+")
     compileOnly("dev.ckateptb.minecraft:Supervisor:+")
 

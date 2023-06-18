@@ -70,6 +70,20 @@ public interface IAbilityDeclaration <A extends IAbility> {
     ActivationMethod[] getActivationMethods();
 
     /**
+     * Данный метод существует для удобства. Довольно часто нам необходимо узнать,
+     * возможно ли активировать способность указанным способом.
+     * @return Возможно ли активировать способность указанным методом активации
+     */
+    default boolean isActivatedBy(ActivationMethod method) {
+        for (ActivationMethod activationMethod : this.getActivationMethods()) {
+            if (activationMethod == method) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * В идеале, каждую способность, которую можно активировать используя любой способ активации,
      * кроме {@link ActivationMethod#SEQUENCE} и {@link ActivationMethod#PASSIVE}, должно быть разрешено
      * привязывать к слоту. Но не стоит забывать, что на написании таких способностей можно строить целый бизнес,
