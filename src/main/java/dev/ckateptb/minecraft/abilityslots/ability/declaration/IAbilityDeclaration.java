@@ -1,10 +1,10 @@
 package dev.ckateptb.minecraft.abilityslots.ability.declaration;
 
-import dev.ckateptb.minecraft.abilityslots.ability.IAbility;
-import dev.ckateptb.minecraft.abilityslots.ability.category.IAbilityCategory;
+import dev.ckateptb.minecraft.abilityslots.ability.Ability;
+import dev.ckateptb.minecraft.abilityslots.ability.category.AbilityCategory;
 import dev.ckateptb.minecraft.abilityslots.ability.enums.ActivationMethod;
 
-public interface IAbilityDeclaration <A extends IAbility> {
+public interface IAbilityDeclaration <A extends Ability> {
     /**
      * Системное название способности, которое используется при реализации в качестве ключа,
      * в том числе и для файлов конфигурации. Название способности всегда должно быть уникальным, не зависимо от автора.
@@ -19,7 +19,7 @@ public interface IAbilityDeclaration <A extends IAbility> {
      *
      * @return Категорию к которой относится способность.
      */
-    IAbilityCategory getCategory();
+    AbilityCategory getCategory();
 
     /**
      * @return Никнейм автора способности.
@@ -104,5 +104,5 @@ public interface IAbilityDeclaration <A extends IAbility> {
     /**
      * @return Клас способности, которую описывает данная декларация.
      */
-    Class<? extends IAbility> getAbilityClass();
+    Class<? extends Ability> getAbilityClass();
 }

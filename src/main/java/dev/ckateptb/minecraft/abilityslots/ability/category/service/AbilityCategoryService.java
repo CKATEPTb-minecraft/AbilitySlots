@@ -1,24 +1,28 @@
 package dev.ckateptb.minecraft.abilityslots.ability.category.service;
 
 import dev.ckateptb.common.tableclothcontainer.annotation.Component;
-import dev.ckateptb.minecraft.abilityslots.ability.category.IAbilityCategory;
+import dev.ckateptb.minecraft.abilityslots.ability.Ability;
+import dev.ckateptb.minecraft.abilityslots.ability.category.AbilityCategory;
+import dev.ckateptb.minecraft.abilityslots.ability.declaration.IAbilityDeclaration;
+import dev.ckateptb.minecraft.abilityslots.config.AbilitySlotsConfig;
 import dev.ckateptb.minecraft.abilityslots.event.AbilitySlotsReloadEvent;
 import lombok.CustomLog;
+import lombok.RequiredArgsConstructor;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * Сервис выступает в качестве хранилища для категорий.
  */
 @CustomLog
 @Component
+@RequiredArgsConstructor
 public class AbilityCategoryService implements Listener {
-    private final Map<String, IAbilityCategory> categories = new HashMap<>();
+    private final Map<String, AbilityCategory> categories = new HashMap<>();
+    private final AbilitySlotsConfig config;
 
     /**
      * Найти категорию по названию.
@@ -26,8 +30,17 @@ public class AbilityCategoryService implements Listener {
      * @param name Системное название категории.
      * @return Контейнер, который содержит категорию, если та была найдена.
      */
-    public Optional<? extends IAbilityCategory> findCategory(String name) {
+    public Optional<? extends AbilityCategory> findCategory(String name) {
         return Optional.ofNullable(this.categories.get(name.toLowerCase()));
+    }
+
+    /**
+     * Получить список всех, зарегистрированных, категорий.
+     *
+     * @return Неизменяемый список деклараций.
+     */
+    public Collection<? extends AbilityCategory> getCategories() {
+        return Collections.unmodifiableCollection(this.categories.values());
     }
 
     /**
@@ -35,10 +48,16 @@ public class AbilityCategoryService implements Listener {
      *
      * @param category Экземпляр категории.
      */
-    public void registerCategory(IAbilityCategory category) {
+    public void registerCategory(AbilityCategory category) {
         String name = category.getName();
-        log.info("Registering a new ability category with name {}", name);
-        this.categories.put(name.toLowerCase(), category);
+        if (!name.matches("[a-zA-Z]+")) {
+            log.warn("Found a new category for abilities ({}), but the developer made a mistake. " +
+                    "The name must contain characters from a-zA-Z", name);
+        } else {
+            log.info("Registering a new ability category with name {}", name);
+            this.categories.put(name.toLowerCase(), category);
+            this.config.loadCategory(category);
+        }
     }
 
     /**

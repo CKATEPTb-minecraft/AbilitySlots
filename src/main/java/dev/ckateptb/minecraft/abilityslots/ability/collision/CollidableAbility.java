@@ -1,6 +1,6 @@
 package dev.ckateptb.minecraft.abilityslots.ability.collision;
 
-import dev.ckateptb.minecraft.abilityslots.ability.IAbility;
+import dev.ckateptb.minecraft.abilityslots.ability.Ability;
 import dev.ckateptb.minecraft.abilityslots.ability.collision.declaration.ICollisionDeclaration;
 import dev.ckateptb.minecraft.abilityslots.ability.collision.enums.AbilityCollisionResult;
 import dev.ckateptb.minecraft.colliders.Collider;
@@ -10,7 +10,7 @@ import java.util.Collection;
 /**
  * Способности реализующие этот интерфейс принимают участие в расчете столкновений.
  */
-public interface ICollidableAbility extends IAbility {
+public interface CollidableAbility extends Ability {
     /**
      * @return Экземпляр декларации, описывающей столкновения для этой способности.
      */
@@ -31,5 +31,5 @@ public interface ICollidableAbility extends IAbility {
      * @param otherCollider Коллайдер другой способности, который спровоцировал вызов данного метода.
      * @return стоит ли продолжать обрабатывать способность, несмотря на столкновение.
      */
-    AbilityCollisionResult onCollide(Collider collider, ICollidableAbility other, Collider otherCollider);
+    AbilityCollisionResult onCollide(Collider collider, CollidableAbility other, Collider otherCollider);
 }

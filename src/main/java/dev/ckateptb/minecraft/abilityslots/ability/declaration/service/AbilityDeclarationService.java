@@ -1,10 +1,13 @@
 package dev.ckateptb.minecraft.abilityslots.ability.declaration.service;
 
 import dev.ckateptb.common.tableclothcontainer.annotation.Component;
-import dev.ckateptb.minecraft.abilityslots.ability.IAbility;
+import dev.ckateptb.minecraft.abilityslots.AbilitySlots;
+import dev.ckateptb.minecraft.abilityslots.ability.Ability;
 import dev.ckateptb.minecraft.abilityslots.ability.declaration.IAbilityDeclaration;
+import dev.ckateptb.minecraft.abilityslots.config.AbilitySlotsConfig;
 import dev.ckateptb.minecraft.abilityslots.event.AbilitySlotsReloadEvent;
 import lombok.CustomLog;
+import lombok.RequiredArgsConstructor;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -16,8 +19,10 @@ import java.util.*;
  */
 @CustomLog
 @Component
+@RequiredArgsConstructor
 public class AbilityDeclarationService implements Listener {
-    private final Map<String, IAbilityDeclaration<? extends IAbility>> declarations = new HashMap<>();
+    private final Map<String, IAbilityDeclaration<? extends Ability>> declarations = new HashMap<>();
+    private final AbilitySlotsConfig config;
 
     /**
      * Найти декларацию для способности по названию.
@@ -25,7 +30,7 @@ public class AbilityDeclarationService implements Listener {
      * @param name Системное название способности.
      * @return Контейнер, который содержит декларацию, если та была найдена.
      */
-    public Optional<IAbilityDeclaration<? extends IAbility>> findDeclaration(String name) {
+    public Optional<IAbilityDeclaration<? extends Ability>> findDeclaration(String name) {
         return Optional.ofNullable(this.declarations.get(name.toLowerCase()));
     }
 
@@ -34,7 +39,7 @@ public class AbilityDeclarationService implements Listener {
      *
      * @return Неизменяемый список деклараций.
      */
-    public Collection<IAbilityDeclaration<? extends IAbility>> getDeclarations() {
+    public Collection<IAbilityDeclaration<? extends Ability>> getDeclarations() {
         return Collections.unmodifiableCollection(this.declarations.values());
     }
 
@@ -43,10 +48,16 @@ public class AbilityDeclarationService implements Listener {
      *
      * @param declaration Декларация способности.
      */
-    public void registerDeclaration(IAbilityDeclaration<? extends IAbility> declaration) {
+    public void registerDeclaration(IAbilityDeclaration<? extends Ability> declaration) {
         String name = declaration.getName();
-        log.info("Registering a ability declaration for the {} Ability", name);
-        this.declarations.put(name.toLowerCase(), declaration);
+        if (!name.matches("[a-zA-Z]+")) {
+            log.warn("Found a new ability ({}), but the developer made a mistake. " +
+                    "The name must contain characters from a-zA-Z", name);
+        } else {
+            log.info("Registering a ability declaration for the {} Ability", name);
+            this.declarations.put(name.toLowerCase(), declaration);
+            this.config.loadAbility(declaration);
+        }
     }
 
     /**

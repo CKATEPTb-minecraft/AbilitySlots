@@ -1,6 +1,6 @@
 package dev.ckateptb.minecraft.abilityslots.entity;
 
-import dev.ckateptb.minecraft.abilityslots.ability.IAbility;
+import dev.ckateptb.minecraft.abilityslots.ability.Ability;
 import dev.ckateptb.minecraft.abilityslots.ray.Ray;
 import dev.ckateptb.minecraft.colliders.Collider;
 import dev.ckateptb.minecraft.colliders.math.ImmutableVector;
@@ -12,20 +12,20 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.MainHand;
 import org.bukkit.util.Vector;
 
-public interface IAbilityTarget<T extends Entity> {
-    static EntityAbilityTarget<Entity> of(Entity entity) {
-        return new EntityAbilityTarget<>(entity);
+public interface AbilityTarget {
+    static EntityAbilityTarget of(Entity entity) {
+        return new EntityAbilityTarget(entity);
     }
 
-    static LivingEntityAbilityTarget<LivingEntity> of(LivingEntity entity) {
-        return new LivingEntityAbilityTarget<>(entity);
+    static LivingEntityAbilityTarget of(LivingEntity entity) {
+        return new LivingEntityAbilityTarget(entity);
     }
 
-    static PlayerAbilityTarget<Player> of(Player entity) {
-        return new PlayerAbilityTarget<>(entity);
+    static PlayerAbilityTarget of(Player entity) {
+        return new PlayerAbilityTarget(entity);
     }
 
-    void setVelocity(Vector velocity, IAbility ability);
+    void setVelocity(Vector velocity, Ability ability);
 
     ImmutableVector getLocation();
 
@@ -37,7 +37,7 @@ public interface IAbilityTarget<T extends Entity> {
 
     World getWorld();
 
-    T getHandle();
+    Entity getHandle();
 
     boolean isLiving();
 
@@ -71,9 +71,9 @@ public interface IAbilityTarget<T extends Entity> {
 
     ImmutableVector getDirection();
 
-    void damage(double amount, IAbility ability);
+    void damage(double amount, Ability ability);
 
-    void damage(double amount, boolean ignoreNoDamageTicks, IAbility ability);
+    void damage(double amount, boolean ignoreNoDamageTicks, Ability ability);
 
     Ray ray(double distance, double size);
 }

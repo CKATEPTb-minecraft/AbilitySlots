@@ -1,6 +1,6 @@
 package dev.ckateptb.minecraft.abilityslots.entity;
 
-import dev.ckateptb.minecraft.abilityslots.ability.IAbility;
+import dev.ckateptb.minecraft.abilityslots.ability.Ability;
 import dev.ckateptb.minecraft.abilityslots.ray.Ray;
 import dev.ckateptb.minecraft.colliders.Collider;
 import dev.ckateptb.minecraft.colliders.Colliders;
@@ -18,8 +18,8 @@ import java.util.Optional;
 
 @Getter
 @Setter
-public class EntityAbilityTarget<T extends Entity> implements IAbilityTarget<T> {
-    protected final T handle;
+public class EntityAbilityTarget implements AbilityTarget {
+    protected final Entity handle;
     private boolean living;
     private boolean player;
     private boolean sneaking;
@@ -31,12 +31,12 @@ public class EntityAbilityTarget<T extends Entity> implements IAbilityTarget<T> 
     private float yaw;
     private float pitch;
 
-    protected EntityAbilityTarget(T handle) {
-        this.handle = handle;
+    protected EntityAbilityTarget(Entity entity) {
+        this.handle = entity;
     }
 
     @Override
-    public void setVelocity(Vector velocity, IAbility ability) {
+    public void setVelocity(Vector velocity, Ability ability) {
         this.handle.setVelocity(velocity);
     }
 
@@ -116,12 +116,12 @@ public class EntityAbilityTarget<T extends Entity> implements IAbilityTarget<T> 
     }
 
     @Override
-    public void damage(double amount, IAbility ability) {
+    public void damage(double amount, Ability ability) {
         this.damage(amount, false, ability);
     }
 
     @Override
-    public void damage(double amount, boolean ignoreNoDamageTicks, IAbility ability) {
+    public void damage(double amount, boolean ignoreNoDamageTicks, Ability ability) {
 
     }
 

@@ -6,9 +6,12 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.MainHand;
 
 @Getter
-public class PlayerAbilityTarget<T extends Player> extends LivingEntityAbilityTarget<T> {
-    protected PlayerAbilityTarget(T entity) {
-        super(entity);
+public class PlayerAbilityTarget extends LivingEntityAbilityTarget {
+    protected final Player handle;
+
+    protected PlayerAbilityTarget(Player player) {
+        super(player);
+        this.handle = player;
     }
 
     @Override

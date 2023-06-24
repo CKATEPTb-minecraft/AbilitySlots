@@ -1,14 +1,17 @@
 package dev.ckateptb.minecraft.abilityslots.entity;
 
-import dev.ckateptb.minecraft.abilityslots.ability.IAbility;
+import dev.ckateptb.minecraft.abilityslots.ability.Ability;
 import dev.ckateptb.minecraft.colliders.math.ImmutableVector;
 import lombok.Getter;
 import org.bukkit.entity.LivingEntity;
 
 @Getter
-public class LivingEntityAbilityTarget<T extends LivingEntity> extends EntityAbilityTarget<T> {
-    protected LivingEntityAbilityTarget(T entity) {
-        super(entity);
+public class LivingEntityAbilityTarget extends EntityAbilityTarget {
+    protected final LivingEntity handle;
+
+    protected LivingEntityAbilityTarget(LivingEntity livingEntity) {
+        super(livingEntity);
+        this.handle = livingEntity;
     }
 
     @Override
@@ -42,8 +45,8 @@ public class LivingEntityAbilityTarget<T extends LivingEntity> extends EntityAbi
     }
 
     @Override
-    public void damage(double amount, boolean ignoreNoDamageTicks, IAbility ability) {
-        if(ignoreNoDamageTicks) this.handle.setNoDamageTicks(0);
+    public void damage(double amount, boolean ignoreNoDamageTicks, Ability ability) {
+        if (ignoreNoDamageTicks) this.handle.setNoDamageTicks(0);
         this.handle.damage(amount);
     }
 }

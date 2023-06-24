@@ -1,8 +1,6 @@
 package dev.ckateptb.minecraft.abilityslots.ability.category;
 
-import org.bukkit.ChatColor;
-
-public interface IAbilityCategory {
+public interface AbilityCategory {
 
     /**
      * Системное название категории, которое используется при реализации в качестве ключа,
@@ -22,13 +20,12 @@ public interface IAbilityCategory {
     String getDisplayName();
 
     /**
-     * Категория должна быть визуально отличимой, по этому каждой категории можно присвоить цвет,
-     * который будет например в чате.
+     * Категория должна быть визуально отличимой.
+     * Комбинируя отображаемое имя категории и префикс для способности можно достичь желаемого результата.
      *
-     * @return Цвет категории.
+     * @return Префикс для способностей текущей категории.
      */
-    ChatColor getColor();
-
+    String getAbilityPrefix();
 
     /**
      * Этот параметр управляется файлом конфигурации,
@@ -37,4 +34,10 @@ public interface IAbilityCategory {
      * @return включена ли категория.
      */
     boolean isEnabled();
+
+    void setDisplayName(String displayName);
+
+    void setAbilityPrefix(String abilityPrefix);
+
+    void setEnabled(boolean enabled);
 }

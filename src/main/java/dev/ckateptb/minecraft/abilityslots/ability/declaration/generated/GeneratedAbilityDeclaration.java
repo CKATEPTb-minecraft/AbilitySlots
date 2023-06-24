@@ -1,7 +1,7 @@
 package dev.ckateptb.minecraft.abilityslots.ability.declaration.generated;
 
-import dev.ckateptb.minecraft.abilityslots.ability.IAbility;
-import dev.ckateptb.minecraft.abilityslots.ability.category.IAbilityCategory;
+import dev.ckateptb.minecraft.abilityslots.ability.Ability;
+import dev.ckateptb.minecraft.abilityslots.ability.category.AbilityCategory;
 import dev.ckateptb.minecraft.abilityslots.ability.declaration.IAbilityDeclaration;
 import dev.ckateptb.minecraft.abilityslots.ability.declaration.generated.annotation.AbilityDeclaration;
 import dev.ckateptb.minecraft.abilityslots.ability.enums.ActivationMethod;
@@ -15,9 +15,9 @@ import java.lang.reflect.Constructor;
  * @param <A>
  */
 @Getter
-public class GeneratedAbilityDeclaration<A extends IAbility> implements IAbilityDeclaration<A> {
+public class GeneratedAbilityDeclaration<A extends Ability> implements IAbilityDeclaration<A> {
     private final String name;
-    private final IAbilityCategory category;
+    private final AbilityCategory category;
     private final String author;
     private final Class<A> abilityClass;
     private final boolean bindable;
@@ -29,7 +29,7 @@ public class GeneratedAbilityDeclaration<A extends IAbility> implements IAbility
     private final String instruction;
 
     @SneakyThrows
-    public GeneratedAbilityDeclaration(AbilityDeclaration declaration, IAbilityCategory category, Class<A> abilityClass) {
+    public GeneratedAbilityDeclaration(AbilityDeclaration declaration, AbilityCategory category, Class<A> abilityClass) {
         this.name = declaration.name();
         this.category = category;
         this.author = declaration.author();

@@ -1,5 +1,6 @@
 package dev.ckateptb.minecraft.abilityslots.ray;
 
+import dev.ckateptb.minecraft.abilityslots.entity.AbilityTarget;
 import dev.ckateptb.minecraft.colliders.Colliders;
 import dev.ckateptb.minecraft.colliders.geometry.RayTraceCollider;
 import dev.ckateptb.minecraft.colliders.math.ImmutableVector;
@@ -19,7 +20,7 @@ public class Ray {
     protected final World world;
 
     /**
-     * Перейти в режим выбора {@link dev.ckateptb.minecraft.abilityslots.entity.IAbilityTarget}
+     * Перейти в режим выбора {@link AbilityTarget}
      */
     public EntityRay entity() {
         return new EntityRay(distance, size, source, direction, world);

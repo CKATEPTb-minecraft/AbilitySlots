@@ -4,10 +4,10 @@ import dev.ckateptb.minecraft.abilityslots.ability.declaration.IAbilityDeclarati
 import dev.ckateptb.minecraft.abilityslots.ability.enums.AbilityActivateStatus;
 import dev.ckateptb.minecraft.abilityslots.ability.enums.AbilityTickStatus;
 import dev.ckateptb.minecraft.abilityslots.ability.enums.ActivationMethod;
-import dev.ckateptb.minecraft.abilityslots.user.IAbilityUser;
+import dev.ckateptb.minecraft.abilityslots.user.AbilityUser;
 import org.bukkit.World;
 
-public interface IAbility {
+public interface Ability {
 
     /**
      * Вызов данного метода управляется {@link dev.ckateptb.minecraft.abilityslots.ability.service.AbilityInstanceService}
@@ -41,13 +41,13 @@ public interface IAbility {
     /**
      * @return пользователя, который использует текущую способность.
      */
-    IAbilityUser getUser();
+    AbilityUser getUser();
 
     /**
      * Назначает нового пользователя, который управляет текущей способностью.
      * @param user пользователь, которому необходимо передать управление над текущей способностью.
      */
-    void setUser(IAbilityUser user);
+    void setUser(AbilityUser user);
 
     /**
      * ВАЖНО! У нас нет своей реализации или обертки для {@link World},
@@ -68,5 +68,5 @@ public interface IAbility {
     /**
      * @return возвращает экземпляр декларации для текущей способности.
      */
-    IAbilityDeclaration<IAbility> getAbilityDeclaration();
+    IAbilityDeclaration<Ability> getAbilityDeclaration();
 }

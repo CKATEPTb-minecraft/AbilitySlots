@@ -1,6 +1,6 @@
 package dev.ckateptb.minecraft.abilityslots.ray;
 
-import dev.ckateptb.minecraft.abilityslots.entity.IAbilityTarget;
+import dev.ckateptb.minecraft.abilityslots.entity.AbilityTarget;
 import dev.ckateptb.minecraft.colliders.geometry.RayTraceCollider;
 import dev.ckateptb.minecraft.colliders.math.ImmutableVector;
 import lombok.Getter;
@@ -81,9 +81,9 @@ public class EntityRay extends Ray {
     }
 
     /**
-     * Найти {@link IAbilityTarget<Entity>} учитывая все условия.
+     * Найти {@link AbilityTarget <Entity>} учитывая все условия.
      */
-    public Optional<IAbilityTarget<Entity>> find() {
+    public Optional<AbilityTarget> find() {
         RayTraceCollider rayTraceCollider = this.rayTraceCollider();
         AtomicReference<Double> atomicDistance = new AtomicReference<>((double) -1);
         if (!this.ignoreBlocks) {
@@ -97,6 +97,6 @@ public class EntityRay extends Ray {
             Double distance = atomicDistance.get();
             if (distance == -1) return true;
             return ImmutableVector.of(entity.getLocation()).distance(source) <= distance;
-        }).map(IAbilityTarget::of);
+        }).map(AbilityTarget::of);
     }
 }
