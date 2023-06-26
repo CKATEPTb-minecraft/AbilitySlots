@@ -27,7 +27,7 @@ public interface AbilityTarget {
 
     void setVelocity(Vector velocity, Ability ability);
 
-    ImmutableVector getLocation();
+    ImmutableVector getVector();
 
     ImmutableVector getCenterLocation();
 
@@ -37,7 +37,7 @@ public interface AbilityTarget {
 
     World getWorld();
 
-    Entity getHandle();
+    Entity getHandle_();
 
     boolean isLiving();
 
@@ -55,7 +55,7 @@ public interface AbilityTarget {
 
     Collider getCollider();
 
-    ImmutableVector getEyeLocation();
+    ImmutableVector getEyeVector();
 
     float getYaw();
 

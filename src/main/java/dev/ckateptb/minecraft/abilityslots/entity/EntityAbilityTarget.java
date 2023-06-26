@@ -2,24 +2,28 @@ package dev.ckateptb.minecraft.abilityslots.entity;
 
 import dev.ckateptb.minecraft.abilityslots.ability.Ability;
 import dev.ckateptb.minecraft.abilityslots.ray.Ray;
+import dev.ckateptb.minecraft.atom.adapter.AdapterUtils;
+import dev.ckateptb.minecraft.atom.adapter.entity.EntityAdapter;
 import dev.ckateptb.minecraft.colliders.Collider;
 import dev.ckateptb.minecraft.colliders.Colliders;
 import dev.ckateptb.minecraft.colliders.internal.math3.util.FastMath;
 import dev.ckateptb.minecraft.colliders.math.ImmutableVector;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.Delegate;
 import org.bukkit.GameMode;
-import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.inventory.MainHand;
 import org.bukkit.util.Vector;
 
+import java.util.Objects;
 import java.util.Optional;
 
 @Getter
 @Setter
-public class EntityAbilityTarget implements AbilityTarget {
-    protected final Entity handle;
+public class EntityAbilityTarget implements AbilityTarget, Entity {
+    @Delegate
+    protected final EntityAdapter handle_;
     private boolean living;
     private boolean player;
     private boolean sneaking;
@@ -32,62 +36,42 @@ public class EntityAbilityTarget implements AbilityTarget {
     private float pitch;
 
     protected EntityAbilityTarget(Entity entity) {
-        this.handle = entity;
+        this.handle_ = AdapterUtils.adapt(entity);
     }
 
     @Override
     public void setVelocity(Vector velocity, Ability ability) {
-        this.handle.setVelocity(velocity);
+        this.handle_.setVelocity(velocity);
     }
 
     @Override
-    public ImmutableVector getLocation() {
-        return ImmutableVector.of(this.handle.getLocation());
+    public ImmutableVector getVector() {
+        return ImmutableVector.of(this.handle_.getLocation());
     }
 
     @Override
     public ImmutableVector getCenterLocation() {
-        return getLocation().add(new ImmutableVector(0, this.handle.getHeight() / 2, 0));
+        return getVector().add(new ImmutableVector(0, this.handle_.getHeight() / 2, 0));
     }
 
     @Override
     public double getDistanceAboveGround(boolean ignoreLiquid) {
-        return this.getLocation().getDistanceAboveGround(this.getWorld(), ignoreLiquid);
-    }
-
-    @Override
-    public boolean isOnGround() {
-        return this.handle.isOnGround();
-    }
-
-    @Override
-    public World getWorld() {
-        return this.handle.getWorld();
-    }
-
-    @Override
-    public boolean isDead() {
-        return this.handle.isDead();
+        return this.getVector().getDistanceAboveGround(this.getWorld(), ignoreLiquid);
     }
 
     @Override
     public Collider getCollider() {
-        return Colliders.aabb(this.handle);
+        return Colliders.aabb(this.handle_);
     }
 
     @Override
-    public ImmutableVector getEyeLocation() {
-        return this.getLocation();
-    }
-
-    @Override
-    public boolean hasPermission(String permission) {
-        return true;
+    public ImmutableVector getEyeVector() {
+        return this.getVector();
     }
 
     @Override
     public GameMode getGameMode() {
-        return Optional.ofNullable(this.gameMode).orElse(this.handle.getServer().getDefaultGameMode());
+        return Optional.ofNullable(this.gameMode).orElse(this.handle_.getServer().getDefaultGameMode());
     }
 
     @Override
@@ -98,9 +82,9 @@ public class EntityAbilityTarget implements AbilityTarget {
     @Override
     public ImmutableVector getHandLocation(MainHand hand) {
         ImmutableVector direction = this.getDirection();
-        if (hand == null) return this.getEyeLocation().add(direction.multiply(0.4));
+        if (hand == null) return this.getEyeVector().add(direction.multiply(0.4));
         double angle = FastMath.toRadians(this.getYaw());
-        ImmutableVector location = this.getLocation();
+        ImmutableVector location = this.getVector();
         ImmutableVector offset = direction.multiply(0.4).add(0, 1.2, 0);
         ImmutableVector vector = new ImmutableVector(FastMath.cos(angle), 0, FastMath.sin(angle)).normalize().multiply(0.3);
         return (hand == MainHand.LEFT ? location.add(vector) : location.subtract(vector)).add(offset);
@@ -127,6 +111,18 @@ public class EntityAbilityTarget implements AbilityTarget {
 
     @Override
     public Ray ray(double distance, double size) {
-        return new Ray(distance, size, this.getEyeLocation(), this.getDirection(), this.getWorld());
+        return new Ray(distance, size, this.getEyeVector(), this.getDirection(), this.getWorld());
+    }
+
+    public boolean equals(Object other) {
+        if (other instanceof EntityAbilityTarget adapter) {
+            other = adapter.handle_;
+        }
+
+        return Objects.equals(this.handle_, other);
+    }
+
+    public int hashCode() {
+        return this.handle_.hashCode();
     }
 }

@@ -1,17 +1,21 @@
 package dev.ckateptb.minecraft.abilityslots.entity;
 
+import dev.ckateptb.minecraft.atom.adapter.AdapterUtils;
+import dev.ckateptb.minecraft.atom.adapter.entity.PlayerAdapter;
 import lombok.Getter;
-import org.bukkit.GameMode;
+import lombok.experimental.Delegate;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.MainHand;
+
+import java.util.Objects;
 
 @Getter
-public class PlayerAbilityTarget extends LivingEntityAbilityTarget {
-    protected final Player handle;
+public class PlayerAbilityTarget extends LivingEntityAbilityTarget implements Player {
+    @Delegate
+    protected final PlayerAdapter handle_;
 
     protected PlayerAbilityTarget(Player player) {
         super(player);
-        this.handle = player;
+        this.handle_ = AdapterUtils.adapt(player);
     }
 
     @Override
@@ -19,18 +23,15 @@ public class PlayerAbilityTarget extends LivingEntityAbilityTarget {
         return true;
     }
 
-    @Override
-    public boolean hasPermission(String permission) {
-        return this.handle.hasPermission(permission);
+    public boolean equals(Object other) {
+        if (other instanceof PlayerAbilityTarget adapter) {
+            other = adapter.handle_;
+        }
+
+        return Objects.equals(this.handle_, other);
     }
 
-    @Override
-    public GameMode getGameMode() {
-        return this.handle.getGameMode();
-    }
-
-    @Override
-    public MainHand getMainHand() {
-        return this.handle.getMainHand();
+    public int hashCode() {
+        return this.handle_.hashCode();
     }
 }

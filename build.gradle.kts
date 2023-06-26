@@ -33,9 +33,9 @@ dependencies {
     paperDevBundle("1.19.2-R0.1-SNAPSHOT")
 
     compileOnly("dev.ckateptb.minecraft:Nicotine:2.0.0-SNAPSHOT")
-    compileOnly("dev.ckateptb.minecraft:Atom:1.1.1-SNAPSHOT")
+    compileOnly("dev.ckateptb.minecraft:Atom:1.2.2-SNAPSHOT")
     compileOnly("dev.ckateptb.minecraft:Varflex:1.0.2-SNAPSHOT")
-    compileOnly("dev.ckateptb.minecraft:Colliders:1.2.4-SNAPSHOT")
+    compileOnly("dev.ckateptb.minecraft:Colliders:1.3.0-SNAPSHOT")
     compileOnly("dev.ckateptb.minecraft:Caffeine:1.0.0-SNAPSHOT")
     compileOnly("dev.ckateptb.minecraft:Supervisor:1.0.2-SNAPSHOT")
 
