@@ -8,8 +8,8 @@ import dev.ckateptb.minecraft.abilityslots.AbilitySlots;
 import dev.ckateptb.minecraft.abilityslots.ability.Ability;
 import dev.ckateptb.minecraft.abilityslots.ability.category.AbilityCategory;
 import dev.ckateptb.minecraft.abilityslots.ability.declaration.IAbilityDeclaration;
+import dev.ckateptb.minecraft.abilityslots.config.annotation.Configurable;
 import dev.ckateptb.minecraft.abilityslots.config.global.GlobalConfig;
-import dev.ckateptb.minecraft.varflex.config.annotation.ConfigField;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import org.apache.commons.lang.StringUtils;
@@ -57,9 +57,9 @@ public class AbilitySlotsConfig extends HoconConfig {
         Field[] fields = clazz.getDeclaredFields();
         for (Field field : fields) {
             field.setAccessible(true);
-            ConfigField annotation = field.getAnnotation(ConfigField.class);
+            Configurable annotation = field.getAnnotation(Configurable.class);
             if (annotation == null) continue;
-            if(instance == null && !Modifier.isStatic(field.getModifiers())) continue;
+            if (instance == null && !Modifier.isStatic(field.getModifiers())) continue;
             String annotationName = annotation.name();
             String keyName = StringUtils.isBlank(annotationName) ? field.getName() : annotationName;
             Object defaultValue = field.get(instance);
