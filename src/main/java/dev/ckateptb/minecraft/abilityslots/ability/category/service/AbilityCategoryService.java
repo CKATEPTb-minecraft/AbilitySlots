@@ -1,9 +1,7 @@
 package dev.ckateptb.minecraft.abilityslots.ability.category.service;
 
 import dev.ckateptb.common.tableclothcontainer.annotation.Component;
-import dev.ckateptb.minecraft.abilityslots.ability.Ability;
 import dev.ckateptb.minecraft.abilityslots.ability.category.AbilityCategory;
-import dev.ckateptb.minecraft.abilityslots.ability.declaration.IAbilityDeclaration;
 import dev.ckateptb.minecraft.abilityslots.config.AbilitySlotsConfig;
 import dev.ckateptb.minecraft.abilityslots.event.AbilitySlotsReloadEvent;
 import lombok.CustomLog;
@@ -68,7 +66,7 @@ public class AbilityCategoryService implements Listener {
      */
     @EventHandler(priority = EventPriority.LOW)
     private void on(AbilitySlotsReloadEvent event) {
-        log.info("Delete all registered ability categories");
+        if (this.categories.size() > 0) log.info("Delete all registered ability categories");
         this.categories.clear();
     }
 }

@@ -1,7 +1,6 @@
 package dev.ckateptb.minecraft.abilityslots.ability.declaration.service;
 
 import dev.ckateptb.common.tableclothcontainer.annotation.Component;
-import dev.ckateptb.minecraft.abilityslots.AbilitySlots;
 import dev.ckateptb.minecraft.abilityslots.ability.Ability;
 import dev.ckateptb.minecraft.abilityslots.ability.declaration.IAbilityDeclaration;
 import dev.ckateptb.minecraft.abilityslots.config.AbilitySlotsConfig;
@@ -54,7 +53,7 @@ public class AbilityDeclarationService implements Listener {
             log.warn("Found a new ability ({}), but the developer made a mistake. " +
                     "The name must contain characters from a-zA-Z", name);
         } else {
-            log.info("Registering a ability declaration for the {} Ability", name);
+            log.info("Registering a declaration for the {} ability", name);
             this.declarations.put(name.toLowerCase(), declaration);
             this.config.loadAbility(declaration);
         }
@@ -68,7 +67,7 @@ public class AbilityDeclarationService implements Listener {
      */
     @EventHandler(priority = EventPriority.LOW)
     private void on(AbilitySlotsReloadEvent event) {
-        log.info("Delete all registered ability declarations");
+        if (this.declarations.size() > 0) log.info("Delete all registered ability declarations");
         this.declarations.clear();
     }
 }
