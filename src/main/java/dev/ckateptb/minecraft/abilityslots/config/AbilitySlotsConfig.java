@@ -7,17 +7,18 @@ import dev.ckateptb.common.tableclothcontainer.annotation.PostConstruct;
 import dev.ckateptb.minecraft.abilityslots.AbilitySlots;
 import dev.ckateptb.minecraft.abilityslots.ability.Ability;
 import dev.ckateptb.minecraft.abilityslots.ability.category.AbilityCategory;
+import dev.ckateptb.minecraft.abilityslots.ability.category.annotation.CategoryDeclaration;
 import dev.ckateptb.minecraft.abilityslots.ability.declaration.IAbilityDeclaration;
 import dev.ckateptb.minecraft.abilityslots.config.annotation.Configurable;
 import dev.ckateptb.minecraft.abilityslots.config.global.GlobalConfig;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import org.apache.commons.lang.StringUtils;
-import org.slf4j.helpers.MessageFormatter;
 import org.spongepowered.configurate.CommentedConfigurationNode;
 
 import java.io.File;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
 @Getter
@@ -41,19 +42,32 @@ public class AbilitySlotsConfig extends HoconConfig {
     }
 
     @SneakyThrows
-    public void loadCategory(AbilityCategory category) {
-        this.loadCustom(category, category.getClass(), category.getName(), this.categories);
+    public void loadCategory(AbilityCategory category, CategoryDeclaration declaration) {
+        String name = declaration.name();
+        CommentedConfigurationNode root = this.categories.node(name);
+        Method setName = category.getClass().getDeclaredMethod("setName", String.class);
+        setName.setAccessible(true);
+        setName.invoke(category, name);
+        category.setEnabled(root.node("enabled").get(Boolean.class, true));
+        category.setDisplayName(root.node("displayName").get(String.class, declaration.displayName()));
+        category.setDescription(root.node("description").get(String.class, declaration.description()));
+        category.setAbilityPrefix(root.node("abilityPrefix").get(String.class, declaration.abilityPrefix()));
+        this.loadCustom(category, category.getClass(), root);
     }
 
     @SneakyThrows
     public <T extends Ability> void loadAbility(IAbilityDeclaration<T> declaration) {
-        this.loadCustom(null, declaration.getAbilityClass(), declaration.getName(), this.categories
-                .node(declaration.getCategory().getName(), "abilities"));
+        CommentedConfigurationNode root = this.categories.node(declaration.getCategory().getName(), "abilities", declaration.getName());
+        declaration.setDisplayName(root.node("displayName").get(String.class, declaration.getDisplayName()));
+        declaration.setDescription(root.node("description").get(String.class, declaration.getDescription()));
+        declaration.setInstruction(root.node("instruction").get(String.class, declaration.getInstruction()));
+        declaration.setEnabled(root.node("enabled").get(Boolean.class, declaration.isEnabled()));
+        this.loadCustom(null, declaration.getAbilityClass(), root);
     }
 
     @SneakyThrows
     @SuppressWarnings("all")
-    public <T> void loadCustom(T instance, Class<? extends T> clazz, String nodeKey, CommentedConfigurationNode root) {
+    public <T> void loadCustom(T instance, Class<? extends T> clazz, CommentedConfigurationNode root) {
         Field[] fields = clazz.getDeclaredFields();
         for (Field field : fields) {
             field.setAccessible(true);
@@ -63,8 +77,7 @@ public class AbilitySlotsConfig extends HoconConfig {
             String annotationName = annotation.name();
             String keyName = StringUtils.isBlank(annotationName) ? field.getName() : annotationName;
             Object defaultValue = field.get(instance);
-            String key = MessageFormatter.format("{}.{}", nodeKey, keyName).getMessage();
-            CommentedConfigurationNode node = root.node(key.split("\\."));
+            CommentedConfigurationNode node = root.node(keyName);
             String comment = annotation.comment();
             if (!StringUtils.isBlank(comment)) node = node.comment(comment);
             field.set(instance, node.get(Primitives.wrap(field.getType()), defaultValue));

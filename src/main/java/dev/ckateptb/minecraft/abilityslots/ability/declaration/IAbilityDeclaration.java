@@ -4,7 +4,7 @@ import dev.ckateptb.minecraft.abilityslots.ability.Ability;
 import dev.ckateptb.minecraft.abilityslots.ability.category.AbilityCategory;
 import dev.ckateptb.minecraft.abilityslots.ability.enums.ActivationMethod;
 
-public interface IAbilityDeclaration <A extends Ability> {
+public interface IAbilityDeclaration<A extends Ability> {
     /**
      * Системное название способности, которое используется при реализации в качестве ключа,
      * в том числе и для файлов конфигурации. Название способности всегда должно быть уникальным, не зависимо от автора.
@@ -72,6 +72,7 @@ public interface IAbilityDeclaration <A extends Ability> {
     /**
      * Данный метод существует для удобства. Довольно часто нам необходимо узнать,
      * возможно ли активировать способность указанным способом.
+     *
      * @return Возможно ли активировать способность указанным методом активации
      */
     default boolean isActivatedBy(ActivationMethod method) {
@@ -105,4 +106,12 @@ public interface IAbilityDeclaration <A extends Ability> {
      * @return Клас способности, которую описывает данная декларация.
      */
     Class<? extends Ability> getAbilityClass();
+
+    void setDisplayName(String displayName);
+
+    void setDescription(String description);
+
+    void setInstruction(String instruction);
+
+    void setEnabled(boolean enabled);
 }

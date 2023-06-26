@@ -1,43 +1,43 @@
 package dev.ckateptb.minecraft.abilityslots.ability.category;
 
-public interface AbilityCategory {
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
+@NoArgsConstructor
+public abstract class AbilityCategory {
 
     /**
      * Системное название категории, которое используется при реализации в качестве ключа,
      * в том числе и для файлов конфигурации. Название категории всегда должно быть уникальным, не зависимо от автора.
-     *
-     * @return Уникальное название категории.
      */
-    String getName();
+    @Setter(AccessLevel.PRIVATE)
+    protected String name;
 
     /**
      * Отображаемое название категории, которое может отличаться от системного и может быть абсолютно любым.
      * Конфигурируется в файле конфигурации, что позволяет администраторам серверов локализировать
      * или изменить название на свой вкус и лад.
-     *
-     * @return Отображаемое название категории.
      */
-    String getDisplayName();
+    protected String displayName;
 
     /**
      * Категория должна быть визуально отличимой.
      * Комбинируя отображаемое имя категории и префикс для способности можно достичь желаемого результата.
-     *
-     * @return Префикс для способностей текущей категории.
      */
-    String getAbilityPrefix();
+    protected String abilityPrefix;
+
+    /**
+     * Полное описание способности.
+     */
+    protected String description;
 
     /**
      * Этот параметр управляется файлом конфигурации,
      * чтобы администраторы серверов могли отключать некоторые категории, по своему желанию.
-     *
-     * @return включена ли категория.
      */
-    boolean isEnabled();
-
-    void setDisplayName(String displayName);
-
-    void setAbilityPrefix(String abilityPrefix);
-
-    void setEnabled(boolean enabled);
+    protected boolean enabled = true;
 }

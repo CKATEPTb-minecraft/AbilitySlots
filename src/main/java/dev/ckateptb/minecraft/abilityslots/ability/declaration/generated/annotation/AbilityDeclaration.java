@@ -10,7 +10,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Данная аннотация применяется к классам, реализующим интерфейс {@link Ability},
+ * Данная аннотация применяется к классам, наследующим {@link Ability},
  * для автоматической генерации декларации способности. См.
  * <p>{@link dev.ckateptb.minecraft.abilityslots.ability.declaration.IAbilityDeclaration}</p>
  * <p>{@link dev.ckateptb.minecraft.abilityslots.ability.declaration.generated.GeneratedAbilityDeclaration}</p>

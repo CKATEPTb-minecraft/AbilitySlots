@@ -4,6 +4,7 @@ import dev.ckateptb.common.tableclothcontainer.annotation.Component;
 import dev.ckateptb.minecraft.abilityslots.AbilitySlots;
 import dev.ckateptb.minecraft.abilityslots.ability.Ability;
 import dev.ckateptb.minecraft.abilityslots.ability.category.AbilityCategory;
+import dev.ckateptb.minecraft.abilityslots.ability.category.annotation.CategoryDeclaration;
 import dev.ckateptb.minecraft.abilityslots.ability.category.service.AbilityCategoryService;
 import dev.ckateptb.minecraft.abilityslots.ability.declaration.generated.GeneratedAbilityDeclaration;
 import dev.ckateptb.minecraft.abilityslots.ability.declaration.generated.annotation.AbilityDeclaration;
@@ -107,19 +108,27 @@ public class AddonService implements Listener {
         this.getAssignableClasses(classes, AbilityCategory.class)
                 .forEach(cl -> {
                     String className = cl.getName();
-                    try {
-                        Constructor<? extends AbilityCategory> constructor = cl.getConstructor();
+                    CategoryDeclaration annotation = cl.getAnnotation(CategoryDeclaration.class);
+                    if (annotation != null) {
+                        String categoryName = annotation.name();
                         try {
-                            this.categoryService.registerCategory(constructor.newInstance());
-                        } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
-                            log.warn("Failed to instantiate category ({})", className);
+                            Constructor<? extends AbilityCategory> constructor = cl.getConstructor();
+                            try {
+                                this.categoryService.registerCategory(constructor.newInstance(), annotation);
+                            } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+                                log.warn("Failed to instantiate category ({})", categoryName);
+                                log.error("An error occurred while creating the category", e);
+                            }
+                        } catch (NoSuchMethodException e) {
+                            log.warn("Found a new category for abilities ({}), " +
+                                    "but the developer made a mistake and did not add a String constructor, " +
+                                    "please pass this information to him", categoryName);
                             log.error("An error occurred while creating the category", e);
                         }
-                    } catch (NoSuchMethodException e) {
+                    } else {
                         log.warn("Found a new category for abilities ({}), " +
-                                "but the developer made a mistake and did not add an empty constructor, " +
-                                "please pass this information to him", className);
-                        log.error("An error occurred while creating the category", e);
+                                "but the developer did not add the Category annotation " +
+                                "please forward this information to him.", className);
                     }
                 });
     }

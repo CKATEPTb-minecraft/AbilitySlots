@@ -2,6 +2,7 @@ package dev.ckateptb.minecraft.abilityslots.ability.category.service;
 
 import dev.ckateptb.common.tableclothcontainer.annotation.Component;
 import dev.ckateptb.minecraft.abilityslots.ability.category.AbilityCategory;
+import dev.ckateptb.minecraft.abilityslots.ability.category.annotation.CategoryDeclaration;
 import dev.ckateptb.minecraft.abilityslots.config.AbilitySlotsConfig;
 import dev.ckateptb.minecraft.abilityslots.event.AbilitySlotsReloadEvent;
 import lombok.CustomLog;
@@ -46,15 +47,15 @@ public class AbilityCategoryService implements Listener {
      *
      * @param category Экземпляр категории.
      */
-    public void registerCategory(AbilityCategory category) {
-        String name = category.getName();
+    public void registerCategory(AbilityCategory category, CategoryDeclaration declaration) {
+        String name = declaration.name();
         if (!name.matches("[a-zA-Z]+")) {
             log.warn("Found a new category for abilities ({}), but the developer made a mistake. " +
                     "The name must contain characters from a-zA-Z", name);
         } else {
             log.info("Registering a new ability category with name {}", name);
             this.categories.put(name.toLowerCase(), category);
-            this.config.loadCategory(category);
+            this.config.loadCategory(category, declaration);
         }
     }
 

@@ -1,13 +1,24 @@
 package dev.ckateptb.minecraft.abilityslots.ability;
 
+import dev.ckateptb.common.tableclothcontainer.IoC;
 import dev.ckateptb.minecraft.abilityslots.ability.declaration.IAbilityDeclaration;
 import dev.ckateptb.minecraft.abilityslots.ability.enums.AbilityActivateStatus;
 import dev.ckateptb.minecraft.abilityslots.ability.enums.AbilityTickStatus;
 import dev.ckateptb.minecraft.abilityslots.ability.enums.ActivationMethod;
+import dev.ckateptb.minecraft.abilityslots.ability.service.AbilityInstanceService;
 import dev.ckateptb.minecraft.abilityslots.user.AbilityUser;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.bukkit.World;
 
-public interface Ability {
+@Getter
+@Setter
+@NoArgsConstructor
+public abstract class Ability {
+    protected AbilityUser user;
+    protected World world;
 
     /**
      * Вызов данного метода управляется {@link dev.ckateptb.minecraft.abilityslots.ability.service.AbilityInstanceService}
@@ -16,7 +27,7 @@ public interface Ability {
      * @param activationMethod указывает какой из описанных способов активации был соблюден.
      * @return стоит ли активировать способность для дальнейшей ее обработки в tick.
      */
-    AbilityActivateStatus activate(ActivationMethod activationMethod);
+    public abstract AbilityActivateStatus activate(ActivationMethod activationMethod);
 
     /**
      * Вызов этого метода управляется {@link dev.ckateptb.minecraft.abilityslots.ability.service.AbilityInstanceService}
@@ -28,7 +39,7 @@ public interface Ability {
      *
      * @return стоит ли продолжать обрабатывать способность на следующий тик.
      */
-    AbilityTickStatus tick();
+    public abstract AbilityTickStatus tick();
 
     /**
      * Данный метод вызывается, когда способность была уничтожена
@@ -36,37 +47,13 @@ public interface Ability {
      * например {@link org.bukkit.event.Listener}. В прочем применять {@link org.bukkit.event.Listener} в
      * экземпляре способности крайне не рекомендуется, но не запрещено.
      */
-    void destroy();
+    public abstract void destroy(Void unused);
 
-    /**
-     * @return пользователя, который использует текущую способность.
-     */
-    AbilityUser getUser();
+    public final void destroy() {
+        IoC.getBean(AbilityInstanceService.class).destroy(this);
+    }
 
-    /**
-     * Назначает нового пользователя, который управляет текущей способностью.
-     * @param user пользователь, которому необходимо передать управление над текущей способностью.
-     */
-    void setUser(AbilityUser user);
-
-    /**
-     * ВАЖНО! У нас нет своей реализации или обертки для {@link World},
-     * и на данный момент создание одного из перечисленного не планируется.
-     * Многие моменты в BukkitAPI не потоко-безопасны, а это значит, что у вас могут возникнуть проблемы
-     * при использовании методов внутри {@link World} и т.д. по иерархии, ведь метод tick, в котором описана основная
-     * логика способности обрабатывается в отдельном потоке.
-     * @return мир, к которому способность относится в данный момент.
-     */
-    World getWorld();
-
-    /**
-     * Назначает для способности указанный мир.
-     * @param world мир, в котором необходимо обрабатывать способность.
-     */
-    void setWorld(World world);
-
-    /**
-     * @return возвращает экземпляр декларации для текущей способности.
-     */
-    IAbilityDeclaration<Ability> getAbilityDeclaration();
+    @Getter
+    @Setter(AccessLevel.PRIVATE)
+    private IAbilityDeclaration<? extends Ability> declaration = null;
 }
