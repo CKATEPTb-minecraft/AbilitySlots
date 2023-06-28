@@ -62,9 +62,7 @@ public class AbilityInstanceService {
                             }
                             return true;
                         }, AbilityTickStatus.DESTROY)
-                        .doOnError(throwable -> {
-                            log.error("do on error");
-                        })
+                        .doOnError(throwable -> log.error("do on error"))
                         .doOnNext(status -> {
                             if (status == AbilityTickStatus.DESTROY) {
                                 destroyed.add(ability);

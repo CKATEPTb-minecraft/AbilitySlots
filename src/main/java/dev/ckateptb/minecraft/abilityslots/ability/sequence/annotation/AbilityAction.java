@@ -1,7 +1,7 @@
 package dev.ckateptb.minecraft.abilityslots.ability.sequence.annotation;
 
 import dev.ckateptb.minecraft.abilityslots.ability.Ability;
-import dev.ckateptb.minecraft.abilityslots.ability.sequence.enums.SequenceAction;
+import dev.ckateptb.minecraft.abilityslots.ability.enums.ActivationMethod;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -13,5 +13,5 @@ import java.lang.annotation.Target;
 public @interface AbilityAction {
     Class<? extends Ability> ability();
 
-    SequenceAction action();
+    ActivationMethod action();
 }

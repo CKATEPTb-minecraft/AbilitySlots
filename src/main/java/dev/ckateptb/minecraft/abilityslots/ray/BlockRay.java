@@ -1,7 +1,5 @@
 package dev.ckateptb.minecraft.abilityslots.ray;
 
-import dev.ckateptb.minecraft.atom.chain.AtomChain;
-import dev.ckateptb.minecraft.atom.chain.SyncAtomChain;
 import dev.ckateptb.minecraft.colliders.math.ImmutableVector;
 import lombok.Getter;
 import org.bukkit.World;
@@ -58,9 +56,9 @@ public class BlockRay extends Ray {
     }
 
     /**
-     * Найти {@link SyncAtomChain<Block>} учитывая все условия.
+     * Найти {@link Block} учитывая все условия.
      */
-    public Optional<SyncAtomChain<Block>> find() {
-        return this.rayTraceCollider().getBlock(ignoreLiquids, ignorePassable, filter).map(AtomChain::sync);
+    public Optional<Block> find() {
+        return this.rayTraceCollider().getBlock(ignoreLiquids, ignorePassable, filter);
     }
 }

@@ -2,16 +2,17 @@ package dev.ckateptb.minecraft.abilityslots.user;
 
 import dev.ckateptb.minecraft.abilityslots.ability.Ability;
 import dev.ckateptb.minecraft.abilityslots.ability.declaration.IAbilityDeclaration;
+import dev.ckateptb.minecraft.abilityslots.ability.sequence.annotation.AbilityAction;
 import dev.ckateptb.minecraft.abilityslots.entity.PlayerAbilityTarget;
 import dev.ckateptb.minecraft.colliders.internal.math3.util.FastMath;
 import org.apache.commons.lang3.Validate;
 import org.bukkit.entity.Player;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class PlayerAbilityUser extends PlayerAbilityTarget implements AbilityUser {
     protected final IAbilityDeclaration<? extends Ability>[] abilities = new IAbilityDeclaration<?>[9];
+    protected final List<AbilityAction> actionHistory = new ArrayList<>();
     protected final Map<Class<? extends Ability>, Long> cooldowns = new HashMap<>();
     protected double currentEnergy;
     protected double maxEnergy;
@@ -32,13 +33,29 @@ public class PlayerAbilityUser extends PlayerAbilityTarget implements AbilityUse
     }
 
     @Override
+    public IAbilityDeclaration<? extends Ability> getSelectedAbility() {
+        int slot = this.getInventory().getHeldItemSlot() + 1;
+        return this.getAbility(slot);
+    }
+
+    @Override
     public void setAbility(int slot, IAbilityDeclaration<? extends Ability> ability) {
         Validate.inclusiveBetween(1, 9, slot);
         this.abilities[slot - 1] = ability;
     }
 
+    public synchronized List<AbilityAction> registerAction(AbilityAction action) {
+        this.actionHistory.add(action);
+        return this.actionHistory;
+    }
+
     @Override
-    public void setCooldown(Class<? extends Ability> ability, long duration) {
+    public boolean canUse(IAbilityDeclaration<? extends Ability> ability) {
+        return true; //TODO
+    }
+
+    @Override
+    public synchronized void setCooldown(Class<? extends Ability> ability, long duration) {
         this.cooldowns.put(ability, duration + System.currentTimeMillis());
     }
 
@@ -48,7 +65,7 @@ public class PlayerAbilityUser extends PlayerAbilityTarget implements AbilityUse
     }
 
     @Override
-    public long getCooldown(Class<? extends Ability> ability) {
+    public synchronized long getCooldown(Class<? extends Ability> ability) {
         return this.cooldowns.getOrDefault(ability, 0L);
     }
 
@@ -79,5 +96,9 @@ public class PlayerAbilityUser extends PlayerAbilityTarget implements AbilityUse
     @Override
     public double getMaxEnergy() {
         return this.maxEnergy;
+    }
+
+    public boolean equals(Object other) {
+        return super.equals(other);
     }
 }

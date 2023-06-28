@@ -22,7 +22,17 @@ public class LivingEntityAbilityUser extends LivingEntityAbilityTarget implement
     }
 
     @Override
+    public IAbilityDeclaration<? extends Ability> getSelectedAbility() {
+        throw new NotImplementedException();
+    }
+
+    @Override
     public void setAbility(int slot, IAbilityDeclaration<? extends Ability> ability) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public boolean canUse(IAbilityDeclaration<? extends Ability> ability) {
         throw new NotImplementedException();
     }
 

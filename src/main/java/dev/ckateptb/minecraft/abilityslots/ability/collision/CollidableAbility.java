@@ -10,17 +10,17 @@ import java.util.Collection;
 /**
  * Способности реализующие этот интерфейс принимают участие в расчете столкновений.
  */
-public interface CollidableAbility extends Ability {
+public abstract class CollidableAbility extends Ability {
     /**
      * @return Экземпляр декларации, описывающей столкновения для этой способности.
      */
-    ICollisionDeclaration getCollisionDeclaration();
+    abstract ICollisionDeclaration getCollisionDeclaration();
 
     /**
      * Чтобы способность принимала участие в расчете столкновений, она должна иметь как минимум один {@link Collider}.
      * @return Перечень {@link Collider}, которые участвуют в расчете столкновений.
      */
-    Collection<Collider> getColliders();
+    abstract Collection<Collider> getColliders();
 
     /**
      * Вызов данного метода управляется {@link dev.ckateptb.minecraft.abilityslots.ability.service.AbilityInstanceService}.
@@ -31,5 +31,5 @@ public interface CollidableAbility extends Ability {
      * @param otherCollider Коллайдер другой способности, который спровоцировал вызов данного метода.
      * @return стоит ли продолжать обрабатывать способность, несмотря на столкновение.
      */
-    AbilityCollisionResult onCollide(Collider collider, CollidableAbility other, Collider otherCollider);
+    abstract AbilityCollisionResult onCollide(Collider collider, CollidableAbility other, Collider otherCollider);
 }
