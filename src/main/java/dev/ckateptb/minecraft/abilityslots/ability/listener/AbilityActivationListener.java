@@ -12,7 +12,10 @@ import dev.ckateptb.minecraft.abilityslots.ray.Ray;
 import dev.ckateptb.minecraft.abilityslots.user.AbilityUser;
 import dev.ckateptb.minecraft.abilityslots.user.PlayerAbilityUser;
 import dev.ckateptb.minecraft.abilityslots.user.service.AbilityUserService;
+import io.papermc.paper.event.player.PlayerArmSwingEvent;
 import lombok.RequiredArgsConstructor;
+import org.bukkit.GameMode;
+import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -36,11 +39,10 @@ public class AbilityActivationListener implements Listener {
 
     private void activate(PlayerAbilityUser user, ActivationMethod activation) {
         IAbilityDeclaration<? extends Ability> declaration = user.getSelectedAbility();
-        user.sendMessage(activation.name());
         if (declaration == null || !user.canUse(declaration)) return;
         AbilityAction action = this.sequenceService.createAction(declaration.getAbilityClass(), activation);
         List<AbilityAction> actions = user.registerAction(action);
-        if(actions.size() > sequenceService.getMaxActionsSize()) actions.remove(0);
+        if (actions.size() > sequenceService.getMaxActionsSize()) actions.remove(0);
         AtomicReference<ActivationMethod> atomicActivation = new AtomicReference<>(ActivationMethod.SEQUENCE);
         this.sequenceService.findSequence(actions) // Выполнил ли пользователь условия для какого-то Sequence
                 .filter(user::canUse) // Может ли пользователь использовать Sequence
@@ -59,25 +61,42 @@ public class AbilityActivationListener implements Listener {
 
     @EventHandler
     public void on(PlayerToggleSneakEvent event) {
-        AbilityUser user = this.userService.getAbilityUser(event.getPlayer());
+        PlayerAbilityUser user = this.userService.getAbilityUser(event.getPlayer());
         boolean sneaking = event.isSneaking();
         ActivationMethod activation = sneaking ? ActivationMethod.SNEAK : ActivationMethod.SNEAK_RELEASE;
-        this.activate((PlayerAbilityUser) user, activation);
+        this.activate(user, activation);
     }
 
     @EventHandler
     public void on(EntityDamageEvent event) {
         if (!(event.getEntity() instanceof Player player)) return;
-        AbilityUser user = userService.getAbilityUser(player);
+        PlayerAbilityUser user = userService.getAbilityUser(player);
         if (event.getCause() == EntityDamageEvent.DamageCause.FALL) {
-            this.activate((PlayerAbilityUser) user, ActivationMethod.FALL);
+            this.activate(user, ActivationMethod.FALL);
         }
+    }
+
+    @EventHandler
+    public void on(PlayerArmSwingEvent event) {
+        if (event.getHand() == EquipmentSlot.OFF_HAND) return;
+        Player player = event.getPlayer();
+        if (player.getGameMode() == GameMode.ADVENTURE) return;
+        PlayerAbilityUser user = userService.getAbilityUser(event.getPlayer());
+        Ray ray = user.ray(5, 0.1);
+        if (ray.entity()
+                .ignoreBlocks(false)
+                .ignoreLiquids(true)
+                .ignorePassable(true)
+                .livingOnly(false)
+                .filter(entity -> !user.equals(entity))
+                .find().isPresent())
+            this.on(new PlayerInteractEvent(player, Action.LEFT_CLICK_AIR, null, null, BlockFace.UP));
     }
 
     @EventHandler
     public void on(PlayerInteractEvent event) {
         if (event.getHand() == EquipmentSlot.OFF_HAND) return;
-        PlayerAbilityUser user = (PlayerAbilityUser) userService.getAbilityUser(event.getPlayer());
+        PlayerAbilityUser user = userService.getAbilityUser(event.getPlayer());
         Ray ray = user.ray(5, 0.1);
         boolean isBlock = ray.block()
                 .ignoreLiquids(true)
@@ -96,12 +115,12 @@ public class AbilityActivationListener implements Listener {
         } else if (action.isRightClick()) {
             activationMethod = isEntity ? ActivationMethod.RIGHT_CLICK_ENTITY : isBlock ? ActivationMethod.RIGHT_CLICK_BLOCK : ActivationMethod.RIGHT_CLICK;
         }
-        if(activationMethod != null) this.activate(user, activationMethod);
+        if (activationMethod != null) this.activate(user, activationMethod);
     }
 
     @EventHandler
     public void on(PlayerSwapHandItemsEvent event) {
-        AbilityUser user = userService.getAbilityUser(event.getPlayer());
-        this.activate((PlayerAbilityUser) user, ActivationMethod.HAND_SWAP);
+        PlayerAbilityUser user = userService.getAbilityUser(event.getPlayer());
+        this.activate(user, ActivationMethod.HAND_SWAP);
     }
 }

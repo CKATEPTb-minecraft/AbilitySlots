@@ -10,4 +10,6 @@ public interface EnergyHolder {
     void setEnergy(double value);
 
     double getMaxEnergy();
+
+    boolean isEnergyEnabled();
 }

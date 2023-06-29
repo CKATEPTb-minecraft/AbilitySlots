@@ -31,8 +31,8 @@ public class AbilityInstanceService {
         this.abilities.add(ability);
     }
 
-    @Schedule(initialDelay = 20, fixedRate = 1)
-    protected void process() {
+    @Schedule(initialDelay = 20, fixedRate = 1, async = true)
+    protected synchronized void process() {
         int parallelism = this.abilities.size();
         if (parallelism == 0) return;
         Set<Ability> destroyed = this.processActive(parallelism);

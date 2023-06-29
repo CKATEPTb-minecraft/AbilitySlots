@@ -17,4 +17,6 @@ public interface AbilityHolder {
     void setAbility(int slot, IAbilityDeclaration<? extends Ability> ability);
 
     boolean canUse(IAbilityDeclaration<? extends Ability> ability);
+
+    boolean canBind(IAbilityDeclaration<? extends Ability> ability);
 }

@@ -11,11 +11,11 @@ import java.util.Objects;
 @Getter
 public class PlayerAbilityTarget extends LivingEntityAbilityTarget implements Player {
     @Delegate
-    protected final PlayerAdapter handle_;
+    protected PlayerAdapter handle_;
 
     protected PlayerAbilityTarget(Player player) {
         super(player);
-        this.handle_ = AdapterUtils.adapt(player);
+        this.updatePlayerAdapter(player);
     }
 
     @Override
@@ -33,5 +33,9 @@ public class PlayerAbilityTarget extends LivingEntityAbilityTarget implements Pl
 
     public int hashCode() {
         return this.handle_.hashCode();
+    }
+
+    public void updatePlayerAdapter(Player player) {
+        this.handle_ = AdapterUtils.adapt(player);
     }
 }
