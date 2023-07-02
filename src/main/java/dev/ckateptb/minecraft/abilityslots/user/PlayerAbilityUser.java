@@ -13,6 +13,7 @@ import dev.ckateptb.minecraft.abilityslots.entity.PlayerAbilityTarget;
 import dev.ckateptb.minecraft.abilityslots.predicate.AbilityConditional;
 import dev.ckateptb.minecraft.abilityslots.user.service.AbilityUserService;
 import dev.ckateptb.minecraft.colliders.internal.math3.util.FastMath;
+import net.kyori.adventure.text.Component;
 import org.apache.commons.lang3.Validate;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -144,14 +145,15 @@ public class PlayerAbilityUser extends PlayerAbilityTarget implements AbilityUse
         return this.service.getConfig().getGlobal().getEnergy().getMax();
     }
 
-    @Override
-    public boolean isEnergyEnabled() {
+    private boolean isEnergyEnabled() {
         return this.service.getConfig().getGlobal().getEnergy().isEnabled();
     }
 
     public boolean equals(Object other) {
         return super.equals(other);
     }
+
+    // Energy Board - START
 
     private BossBar energyBar;
 
@@ -166,7 +168,6 @@ public class PlayerAbilityUser extends PlayerAbilityTarget implements AbilityUse
 
     @Override
     public synchronized void hideEnergyBoard() {
-        EnergyConfig energyConfig = service.getConfig().getGlobal().getEnergy();
         if (this.energyBar == null) return;
         this.energyBar.removePlayer(Objects.requireNonNull(this.handle_.getPlayer()));
         this.energyBar = null;
@@ -185,10 +186,14 @@ public class PlayerAbilityUser extends PlayerAbilityTarget implements AbilityUse
         }
     }
 
+    // Energy Board - END
+
+    // Ability Board - START
+
     private Scoreboard scoreboard;
     private Objective objective;
 
-    public boolean isAbilityBoardEnabled() {
+    private boolean isAbilityBoardEnabled() {
         return this.service.getConfig().getGlobal().getBoard().isEnabled();
     }
 
@@ -200,7 +205,7 @@ public class PlayerAbilityUser extends PlayerAbilityTarget implements AbilityUse
         if (!config.isEnabled()) return;
         ScoreboardManager manager = Bukkit.getScoreboardManager();
         this.scoreboard = manager.getNewScoreboard();
-        String header = config.getHeader();
+        Component header = Component.text().content(config.getHeader()).build();
         this.objective = scoreboard.registerNewObjective("abilityboard", Criteria.DUMMY, header, RenderType.INTEGER);
         objective.setDisplaySlot(DisplaySlot.SIDEBAR);
     }
@@ -255,7 +260,7 @@ public class PlayerAbilityUser extends PlayerAbilityTarget implements AbilityUse
                                     Duration.ofMillis(this.getCooldown(ability) - System.currentTimeMillis()).getSeconds()
                             )));
                 } else {
-                    sb.append(config.getCooldown()
+                    sb.append(config.getAbility()
                             .replaceAll("%category_prefix%", ability.getCategory().getAbilityPrefix())
                             .replaceAll("%ability%", ability.getDisplayName()));
                 }
@@ -301,4 +306,6 @@ public class PlayerAbilityUser extends PlayerAbilityTarget implements AbilityUse
     private String getUniquePrefix(int index) {
         return index < 22 ? ChatColor.values()[index].toString() + ChatColor.RESET : ChatColor.RESET + getUniquePrefix(index - 22);
     }
+
+    // Ability Board - END
 }
