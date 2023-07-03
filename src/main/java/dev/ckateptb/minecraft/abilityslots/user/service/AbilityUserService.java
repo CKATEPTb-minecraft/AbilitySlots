@@ -4,9 +4,10 @@ import com.destroystokyo.paper.event.entity.EntityAddToWorldEvent;
 import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
 import dev.ckateptb.common.tableclothcontainer.annotation.Component;
 import dev.ckateptb.minecraft.abilityslots.config.AbilitySlotsConfig;
+import dev.ckateptb.minecraft.abilityslots.database.preset.repository.AbilityBoardPresetRepository;
+import dev.ckateptb.minecraft.abilityslots.database.user.repository.UserBoardRepository;
 import dev.ckateptb.minecraft.abilityslots.event.AbilitySlotsReloadEvent;
 import dev.ckateptb.minecraft.abilityslots.user.AbilityUser;
-import dev.ckateptb.minecraft.abilityslots.user.LivingEntityAbilityUser;
 import dev.ckateptb.minecraft.abilityslots.user.PlayerAbilityUser;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +30,10 @@ public class AbilityUserService implements Listener {
     private final Map<UUID, AbilityUser> users = new HashMap<>();
     @Getter
     private final AbilitySlotsConfig config;
+    @Getter
+    private final AbilityBoardPresetRepository presetRepository;
+    @Getter
+    private final UserBoardRepository boardsRepository;
 
     public synchronized AbilityUser getAbilityUser(LivingEntity livingEntity) {
         throw new NotImplementedException();
@@ -48,7 +53,7 @@ public class AbilityUserService implements Listener {
     @EventHandler
     private void on(EntityAddToWorldEvent event) {
         Entity entity = event.getEntity();
-        if(entity instanceof Player player) {
+        if (entity instanceof Player player) {
             PlayerAbilityUser user = this.getAbilityUser(player);
             user.hideEnergyBoard();
             user.showEnergyBoard();

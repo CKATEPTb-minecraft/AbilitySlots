@@ -38,6 +38,7 @@ dependencies {
     compileOnly("dev.ckateptb.minecraft:Colliders:1.3.0-SNAPSHOT")
     compileOnly("dev.ckateptb.minecraft:Caffeine:1.0.0-SNAPSHOT")
     compileOnly("dev.ckateptb.minecraft:Supervisor:1.0.2-SNAPSHOT")
+    compileOnly("dev.ckateptb.minecraft:Chest:1.1.0-SNAPSHOT")
 
 //    implementation("de.themoep:minedown:1.7.1-SNAPSHOT")
 
@@ -81,9 +82,9 @@ tasks {
     named<Copy>("processResources") {
         filesMatching("plugin.yml") {
             expand(
-                "projectVersion" to project.version,
-                "projectName" to project.name,
-                "projectMainClass" to "${rootPackage}.${project.name}"
+                    "projectVersion" to project.version,
+                    "projectName" to project.name,
+                    "projectMainClass" to "${rootPackage}.${project.name}"
             )
         }
         from("LICENSE") {
