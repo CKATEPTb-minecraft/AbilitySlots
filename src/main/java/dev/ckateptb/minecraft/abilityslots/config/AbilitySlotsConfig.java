@@ -8,6 +8,7 @@ import dev.ckateptb.minecraft.abilityslots.AbilitySlots;
 import dev.ckateptb.minecraft.abilityslots.ability.Ability;
 import dev.ckateptb.minecraft.abilityslots.ability.category.AbilityCategory;
 import dev.ckateptb.minecraft.abilityslots.ability.category.annotation.CategoryDeclaration;
+import dev.ckateptb.minecraft.abilityslots.ability.collision.CollidableAbility;
 import dev.ckateptb.minecraft.abilityslots.ability.declaration.IAbilityDeclaration;
 import dev.ckateptb.minecraft.abilityslots.config.annotation.Configurable;
 import dev.ckateptb.minecraft.abilityslots.config.global.GlobalConfig;
@@ -20,6 +21,7 @@ import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.List;
 
 @Getter
 @Component
@@ -63,6 +65,14 @@ public class AbilitySlotsConfig extends HoconConfig {
         declaration.setInstruction(root.node("instruction").get(String.class, declaration.getInstruction()));
         declaration.setEnabled(root.node("enabled").get(Boolean.class, declaration.isEnabled()));
         this.loadCustom(null, declaration.getAbilityClass(), root);
+    }
+
+    @SneakyThrows
+    public <T extends CollidableAbility> List<String> loadCollision(IAbilityDeclaration<T> declaration, List<String> collision) {
+        CommentedConfigurationNode root = this.categories.node(declaration.getCategory().getName(), "abilities", declaration.getName(), "collision");
+        List<String> list = root.getList(String.class, collision);
+        this.save();
+        return list;
     }
 
     @SneakyThrows

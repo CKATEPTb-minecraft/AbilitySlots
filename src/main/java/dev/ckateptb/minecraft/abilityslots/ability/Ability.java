@@ -55,5 +55,5 @@ public abstract class Ability {
 
     @Getter
     @Setter(AccessLevel.PRIVATE)
-    private IAbilityDeclaration<? extends Ability> declaration = null;
+    protected IAbilityDeclaration<? extends Ability> declaration = null;
 }

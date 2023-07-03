@@ -6,6 +6,11 @@ import dev.ckateptb.minecraft.abilityslots.ability.Ability;
 import dev.ckateptb.minecraft.abilityslots.ability.category.AbilityCategory;
 import dev.ckateptb.minecraft.abilityslots.ability.category.annotation.CategoryDeclaration;
 import dev.ckateptb.minecraft.abilityslots.ability.category.service.AbilityCategoryService;
+import dev.ckateptb.minecraft.abilityslots.ability.collision.CollidableAbility;
+import dev.ckateptb.minecraft.abilityslots.ability.collision.declaration.generated.GeneratedCollisionDeclaration;
+import dev.ckateptb.minecraft.abilityslots.ability.collision.declaration.generated.annotation.CollisionDeclaration;
+import dev.ckateptb.minecraft.abilityslots.ability.collision.declaration.service.CollisionDeclarationService;
+import dev.ckateptb.minecraft.abilityslots.ability.declaration.IAbilityDeclaration;
 import dev.ckateptb.minecraft.abilityslots.ability.declaration.generated.GeneratedAbilityDeclaration;
 import dev.ckateptb.minecraft.abilityslots.ability.declaration.generated.annotation.AbilityDeclaration;
 import dev.ckateptb.minecraft.abilityslots.ability.declaration.service.AbilityDeclarationService;
@@ -47,7 +52,8 @@ import java.util.stream.Stream;
 public class AddonService implements Listener {
     private final AbilitySlots plugin;
     private final AbilityCategoryService categoryService;
-    private final AbilityDeclarationService declarationService;
+    private final AbilityDeclarationService abilityDeclarationService;
+    private final CollisionDeclarationService collisionDeclarationService;
     private final AbilitySequenceService sequenceService;
 
     @SneakyThrows
@@ -153,7 +159,20 @@ public class AddonService implements Listener {
                                     if (category != null) {
                                         GeneratedAbilityDeclaration<? extends Ability> ability =
                                                 new GeneratedAbilityDeclaration<>(declaration, category, cl);
-                                        this.declarationService.registerDeclaration(ability);
+                                        this.abilityDeclarationService.registerDeclaration(ability);
+                                        if (CollidableAbility.class.isAssignableFrom(cl)) {
+                                            Class<? extends CollidableAbility> collidableClass = (Class<? extends CollidableAbility>) cl;
+                                            CollisionDeclaration collisionDeclaration = collidableClass.getAnnotation(CollisionDeclaration.class);
+                                            if (collisionDeclaration != null) {
+                                                GeneratedCollisionDeclaration collision = new GeneratedCollisionDeclaration(collisionDeclaration);
+                                                this.collisionDeclarationService.registerDeclaration((IAbilityDeclaration<? extends CollidableAbility>) ability, collision);
+                                            } else {
+                                                log.warn("A new collidable ability was found ({}), " +
+                                                        "but the developer did not add the CollisionDeclaration annotation " +
+                                                        "to it. If you are in contact with the developer, " +
+                                                        "please forward this information to him.", abilityName);
+                                            }
+                                        }
                                         if (ability.isActivatedBy(ActivationMethod.SEQUENCE)) {
                                             Sequence sequence = cl.getAnnotation(Sequence.class);
                                             if (sequence != null) {

@@ -5,10 +5,11 @@ import dev.ckateptb.minecraft.abilityslots.ability.category.AbilityCategory;
 import dev.ckateptb.minecraft.abilityslots.ability.declaration.IAbilityDeclaration;
 import dev.ckateptb.minecraft.abilityslots.ability.declaration.generated.annotation.AbilityDeclaration;
 import dev.ckateptb.minecraft.abilityslots.ability.enums.ActivationMethod;
-import lombok.AccessLevel;
+import dev.ckateptb.minecraft.abilityslots.event.AbilityCreateEvent;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
+import org.bukkit.Bukkit;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -56,6 +57,7 @@ public class GeneratedAbilityDeclaration<A extends Ability> implements IAbilityD
     public A createAbility() {
         A instance = this.newInstanceConstructor.newInstance();
         this.setDeclaration.invoke(instance, this);
+        Bukkit.getPluginManager().callEvent(new AbilityCreateEvent(instance));
         return instance;
     }
 }

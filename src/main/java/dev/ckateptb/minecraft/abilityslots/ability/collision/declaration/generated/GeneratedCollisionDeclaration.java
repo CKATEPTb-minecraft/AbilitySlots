@@ -15,7 +15,11 @@ public class GeneratedCollisionDeclaration implements ICollisionDeclaration {
     private final Set<Class<? extends CollidableAbility>> destructible;
 
     public GeneratedCollisionDeclaration(CollisionDeclaration declaration) {
-        this.destructible = Set.of(declaration.destructible());
+        this(Set.of(declaration.destructible()));
+    }
+
+    public GeneratedCollisionDeclaration(Set<Class<? extends CollidableAbility>> destructible) {
+        this.destructible = destructible;
     }
 
     @Override

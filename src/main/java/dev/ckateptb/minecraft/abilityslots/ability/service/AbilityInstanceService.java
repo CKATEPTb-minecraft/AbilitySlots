@@ -3,27 +3,33 @@ package dev.ckateptb.minecraft.abilityslots.ability.service;
 import com.google.common.collect.Sets;
 import dev.ckateptb.common.tableclothcontainer.annotation.Component;
 import dev.ckateptb.minecraft.abilityslots.ability.Ability;
+import dev.ckateptb.minecraft.abilityslots.ability.collision.CollidableAbility;
+import dev.ckateptb.minecraft.abilityslots.ability.collision.declaration.ICollisionDeclaration;
+import dev.ckateptb.minecraft.abilityslots.ability.collision.enums.AbilityCollisionResult;
 import dev.ckateptb.minecraft.abilityslots.ability.declaration.IAbilityDeclaration;
 import dev.ckateptb.minecraft.abilityslots.ability.enums.AbilityTickStatus;
 import dev.ckateptb.minecraft.abilityslots.user.AbilityUser;
 import dev.ckateptb.minecraft.atom.chain.AtomChain;
+import dev.ckateptb.minecraft.colliders.Collider;
 import dev.ckateptb.minecraft.nicotine.annotation.Schedule;
 import lombok.CustomLog;
+import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
-import java.util.Collections;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Component
 @CustomLog
+@RequiredArgsConstructor
 public class AbilityInstanceService {
     private final Set<Ability> abilities = new HashSet<>();
 
@@ -32,7 +38,7 @@ public class AbilityInstanceService {
     }
 
     @Schedule(initialDelay = 20, fixedRate = 1, async = true)
-    protected synchronized void process() {
+    private synchronized void process() {
         int parallelism = this.abilities.size();
         if (parallelism == 0) return;
         Set<Ability> destroyed = this.processActive(parallelism);
@@ -46,7 +52,37 @@ public class AbilityInstanceService {
                 .runOn(Schedulers.boundedElastic())
                 .flatMap(ability -> Mono.just(ability)
                         .publishOn(Schedulers.parallel())
-                        .map(Ability::tick)
+                        .map(current -> {
+                            // Ability Collision - Start
+                            if (current instanceof CollidableAbility collidableAbility && !collidableAbility.getColliders().isEmpty()) {
+                                ICollisionDeclaration declaration = collidableAbility.getCollisionDeclaration();
+                                Collection<Class<? extends CollidableAbility>> destructible = declaration.getDestructible();
+                                for (Class<? extends CollidableAbility> otherClass : destructible) {
+                                    for (CollidableAbility other : this.instances(otherClass)
+                                            .map(other -> (CollidableAbility) other)
+                                            .filter(other -> !other.getColliders().isEmpty())
+                                            .toList()) {
+                                        boolean otherDestructCurrent = other.getCollisionDeclaration().isDestruct(collidableAbility);
+                                        for (Collider otherCollider : other.getColliders()) {
+                                            for (Collider collider : collidableAbility.getColliders()) {
+                                                if (collider.intersects(otherCollider)) {
+                                                    if (other.onCollide(otherCollider, collidableAbility, collider) == AbilityCollisionResult.DESTROY) {
+                                                        destroyed.add(ability);
+                                                    }
+                                                    if (otherDestructCurrent) {
+                                                        if (collidableAbility.onCollide(collider, other, otherCollider) == AbilityCollisionResult.DESTROY) {
+                                                            return AbilityTickStatus.DESTROY;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            // Ability Collision - End
+                            return current.tick();
+                        })
                         .timeout(Duration.of(50, ChronoUnit.MILLIS), Schedulers.parallel())
                         .onErrorReturn(throwable -> {
                             IAbilityDeclaration<? extends Ability> declaration = ability.getDeclaration();
@@ -62,7 +98,6 @@ public class AbilityInstanceService {
                             }
                             return true;
                         }, AbilityTickStatus.DESTROY)
-                        .doOnError(throwable -> log.error("do on error"))
                         .doOnNext(status -> {
                             if (status == AbilityTickStatus.DESTROY) {
                                 destroyed.add(ability);
@@ -97,13 +132,16 @@ public class AbilityInstanceService {
                 ).subscribe();
     }
 
-    public Set<Ability> instances(AbilityUser user) {
+    public synchronized Stream<Ability> instances(AbilityUser user) {
         return this.abilities.stream()
-                .filter(ability -> Objects.equals(user, ability.getUser()))
-                .collect(Collectors.toUnmodifiableSet());
+                .filter(ability -> Objects.equals(user, ability.getUser()));
     }
 
-    public Set<Ability> instances() {
-        return Collections.unmodifiableSet(this.abilities);
+    public synchronized Stream<Ability> instances(Class<? extends Ability> type) {
+        return this.abilities.stream().filter(type::isInstance);
+    }
+
+    public synchronized Stream<Ability> instances() {
+        return this.abilities.stream();
     }
 }
