@@ -12,6 +12,7 @@ import dev.ckateptb.minecraft.abilityslots.user.PlayerAbilityUser;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang.NotImplementedException;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -71,7 +72,11 @@ public class AbilityUserService implements Listener {
     }
 
     @EventHandler(priority = EventPriority.NORMAL)
-    private void on(AbilitySlotsReloadEvent event) {
+    private synchronized void on(AbilitySlotsReloadEvent event) {
+        this.users.forEach((uuid, user) -> {
+            if(user instanceof PlayerAbilityUser player) player.hideEnergyBoard();
+        });
         this.users.clear();
+        Bukkit.getOnlinePlayers().forEach(this::getAbilityUser);
     }
 }

@@ -12,9 +12,14 @@ import dev.ckateptb.minecraft.abilityslots.ability.collision.CollidableAbility;
 import dev.ckateptb.minecraft.abilityslots.ability.declaration.IAbilityDeclaration;
 import dev.ckateptb.minecraft.abilityslots.config.annotation.Configurable;
 import dev.ckateptb.minecraft.abilityslots.config.global.GlobalConfig;
+import dev.ckateptb.minecraft.abilityslots.config.language.LanguageConfig;
+import dev.ckateptb.minecraft.abilityslots.event.AbilitySlotsReloadEvent;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import org.apache.commons.lang.StringUtils;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
 import org.spongepowered.configurate.CommentedConfigurationNode;
 
 import java.io.File;
@@ -25,12 +30,13 @@ import java.util.List;
 
 @Getter
 @Component
-public class AbilitySlotsConfig extends HoconConfig {
+public class AbilitySlotsConfig extends HoconConfig implements Listener {
     @Getter
     private static AbilitySlotsConfig instance;
     private GlobalConfig global = new GlobalConfig();
     private CommentedConfigurationNode categories = CommentedConfigurationNode.factory().createNode();
     private CommentedConfigurationNode abilities = CommentedConfigurationNode.factory().createNode();
+    private LanguageConfig language = new LanguageConfig();
 
     public AbilitySlotsConfig() {
         AbilitySlotsConfig.instance = this;
@@ -47,7 +53,7 @@ public class AbilitySlotsConfig extends HoconConfig {
     public void loadCategory(AbilityCategory category, CategoryDeclaration declaration) {
         String name = declaration.name();
         CommentedConfigurationNode root = this.categories.node(name);
-        Method setName = category.getClass().getDeclaredMethod("setName", String.class);
+        Method setName = AbilityCategory.class.getDeclaredMethod("setName", String.class);
         setName.setAccessible(true);
         setName.invoke(category, name);
         category.setEnabled(root.node("enabled").get(Boolean.class, true));
@@ -98,5 +104,10 @@ public class AbilitySlotsConfig extends HoconConfig {
     @Override
     public File getFile() {
         return AbilitySlots.getPlugin().getDataFolder().toPath().resolve("config.conf").toFile();
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void on(AbilitySlotsReloadEvent event) {
+        this.load();
     }
 }

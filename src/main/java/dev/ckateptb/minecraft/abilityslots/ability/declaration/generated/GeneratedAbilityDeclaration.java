@@ -44,7 +44,7 @@ public class GeneratedAbilityDeclaration<A extends Ability> implements IAbilityD
         this.bindable = declaration.bindable();
         this.activationMethods = declaration.activators();
         this.newInstanceConstructor = this.abilityClass.getConstructor();
-        this.setDeclaration = this.abilityClass.getDeclaredMethod("setDeclaration", IAbilityDeclaration.class);
+        this.setDeclaration = Ability.class.getDeclaredMethod("setDeclaration", IAbilityDeclaration.class);
         this.setDeclaration.setAccessible(true);
         this.enabled = true;
         this.displayName = declaration.displayName();

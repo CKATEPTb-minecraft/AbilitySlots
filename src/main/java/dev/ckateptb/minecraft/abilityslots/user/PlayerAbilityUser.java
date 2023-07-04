@@ -4,6 +4,7 @@ import dev.ckateptb.common.tableclothcontainer.IoC;
 import dev.ckateptb.minecraft.abilityslots.ability.Ability;
 import dev.ckateptb.minecraft.abilityslots.ability.board.AbilityBoardHolder;
 import dev.ckateptb.minecraft.abilityslots.ability.board.config.AbilityBoardConfig;
+import dev.ckateptb.minecraft.abilityslots.ability.category.AbilityCategory;
 import dev.ckateptb.minecraft.abilityslots.ability.declaration.IAbilityDeclaration;
 import dev.ckateptb.minecraft.abilityslots.ability.declaration.service.AbilityDeclarationService;
 import dev.ckateptb.minecraft.abilityslots.ability.enums.ActivationMethod;
@@ -17,6 +18,7 @@ import dev.ckateptb.minecraft.abilityslots.energy.config.EnergyConfig;
 import dev.ckateptb.minecraft.abilityslots.energy.event.PlayerEnergyChangeEvent;
 import dev.ckateptb.minecraft.abilityslots.entity.PlayerAbilityTarget;
 import dev.ckateptb.minecraft.abilityslots.predicate.AbilityConditional;
+import dev.ckateptb.minecraft.abilityslots.predicate.CategoryConditional;
 import dev.ckateptb.minecraft.abilityslots.user.service.AbilityUserService;
 import dev.ckateptb.minecraft.colliders.internal.math3.util.FastMath;
 import lombok.SneakyThrows;
@@ -99,6 +101,10 @@ public class PlayerAbilityUser extends PlayerAbilityTarget implements AbilityUse
                 .hasCategory()
                 .isEnabled()
                 .build().matches(this, ability);
+    }
+
+    public boolean canUse(AbilityCategory category) {
+        return new CategoryConditional.Builder().hasPermission().build().matches(this, category);
     }
 
     @Override
@@ -405,7 +411,7 @@ public class PlayerAbilityUser extends PlayerAbilityTarget implements AbilityUse
 
     @SneakyThrows
     private void fillPreset(Object preset) {
-        for(int i = 1; i <= 9; i++) {
+        for (int i = 1; i <= 9; i++) {
             Method declaredMethod = preset.getClass().getDeclaredMethod("setSlot_" + i, String.class);
             declaredMethod.setAccessible(true);
             declaredMethod.invoke(preset, Optional.ofNullable(this.getAbility(i)).map(IAbilityDeclaration::getName).orElse(null));

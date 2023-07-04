@@ -195,6 +195,7 @@ public class AddonService implements Listener {
                                             "but the developer made a mistake and did not add an empty constructor. " +
                                             "If you are in contact with the developer, " +
                                             "please forward this information to him.", abilityName);
+                                    e.printStackTrace();
                                 }
                             } else {
                                 log.warn("A new ability was found ({}), " +

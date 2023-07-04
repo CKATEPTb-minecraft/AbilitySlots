@@ -26,7 +26,7 @@ val internal = "${rootPackage}.internal"
 repositories {
     mavenCentral()
     maven("https://repo.animecraft.fun/repository/maven-snapshots/")
-//    maven("https://repo.minebench.de/")
+    maven("https://repo.glowing.ink/snapshots")
 }
 
 dependencies {
@@ -37,10 +37,10 @@ dependencies {
     compileOnly("dev.ckateptb.minecraft:Varflex:1.0.2-SNAPSHOT")
     compileOnly("dev.ckateptb.minecraft:Colliders:1.3.0-SNAPSHOT")
     compileOnly("dev.ckateptb.minecraft:Caffeine:1.0.0-SNAPSHOT")
-    compileOnly("dev.ckateptb.minecraft:Supervisor:1.0.2-SNAPSHOT")
+    compileOnly("dev.ckateptb.minecraft:Supervisor:1.0.3-SNAPSHOT")
     compileOnly("dev.ckateptb.minecraft:Chest:1.1.0-SNAPSHOT")
 
-//    implementation("de.themoep:minedown:1.7.1-SNAPSHOT")
+    implementation("ink.glowing:inkymessage:0.12.0-SNAPSHOT")
 
     compileOnly("org.projectlombok:lombok:+")
     annotationProcessor("org.projectlombok:lombok:+")
