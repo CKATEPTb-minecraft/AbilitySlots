@@ -11,7 +11,7 @@ import java.util.UUID;
 @Setter
 @DatabaseTable(tableName = "users")
 public class UserBoard {
-    @DatabaseField(unique = true, generatedId = true, canBeNull = false)
+    @DatabaseField(unique = true, id = true, canBeNull = false)
     private UUID player;
     @DatabaseField
     private String slot_1;
