@@ -29,7 +29,7 @@ public class AbilityCategoryService implements Listener {
      * @param name Системное название категории.
      * @return Контейнер, который содержит категорию, если та была найдена.
      */
-    public Optional<? extends AbilityCategory> findCategory(String name) {
+    public synchronized Optional<? extends AbilityCategory> findCategory(String name) {
         return Optional.ofNullable(this.categories.get(name.toLowerCase()));
     }
 
@@ -38,7 +38,7 @@ public class AbilityCategoryService implements Listener {
      *
      * @return Неизменяемый список деклараций.
      */
-    public Collection<? extends AbilityCategory> getCategories() {
+    public synchronized Collection<? extends AbilityCategory> getCategories() {
         return Collections.unmodifiableCollection(this.categories.values());
     }
 
@@ -47,7 +47,7 @@ public class AbilityCategoryService implements Listener {
      *
      * @param category Экземпляр категории.
      */
-    public void registerCategory(AbilityCategory category, CategoryDeclaration declaration) {
+    public synchronized void registerCategory(AbilityCategory category, CategoryDeclaration declaration) {
         String name = declaration.name();
         if (!name.matches("[a-zA-Z]+")) {
             log.warn("Found a new category for abilities ({}), but the developer made a mistake. " +

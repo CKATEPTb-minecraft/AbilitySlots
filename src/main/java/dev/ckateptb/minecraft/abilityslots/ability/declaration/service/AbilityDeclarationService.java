@@ -29,7 +29,7 @@ public class AbilityDeclarationService implements Listener {
      * @param name Системное название способности.
      * @return Контейнер, который содержит декларацию, если та была найдена.
      */
-    public Optional<IAbilityDeclaration<? extends Ability>> findDeclaration(String name) {
+    public synchronized Optional<IAbilityDeclaration<? extends Ability>> findDeclaration(String name) {
         return Optional.ofNullable(this.declarations.get(name.toLowerCase()));
     }
 
@@ -38,7 +38,7 @@ public class AbilityDeclarationService implements Listener {
      *
      * @return Неизменяемый список деклараций.
      */
-    public Collection<IAbilityDeclaration<? extends Ability>> getDeclarations() {
+    public synchronized Collection<IAbilityDeclaration<? extends Ability>> getDeclarations() {
         return Collections.unmodifiableCollection(this.declarations.values());
     }
 
@@ -47,7 +47,7 @@ public class AbilityDeclarationService implements Listener {
      *
      * @param declaration Декларация способности.
      */
-    public void registerDeclaration(IAbilityDeclaration<? extends Ability> declaration) {
+    public synchronized void registerDeclaration(IAbilityDeclaration<? extends Ability> declaration) {
         String name = declaration.getName();
         if (!name.matches("[a-zA-Z]+")) {
             log.warn("Found a new ability ({}), but the developer made a mistake. " +
