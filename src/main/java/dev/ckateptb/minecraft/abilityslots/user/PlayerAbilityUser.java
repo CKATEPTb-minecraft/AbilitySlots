@@ -42,7 +42,7 @@ public class PlayerAbilityUser extends PlayerAbilityTarget implements AbilityUse
     protected final Map<IAbilityDeclaration<? extends Ability>, Long> cooldowns = new HashMap<>();
     protected double currentEnergy;
     private final AbilityUserService service;
-    private final Map<String, AbilityBoardPreset> presets = Collections.synchronizedMap(new HashMap<String, AbilityBoardPreset>());
+    private final Map<String, AbilityBoardPreset> presets = Collections.synchronizedMap(new HashMap<>());
 
     public PlayerAbilityUser(Player player, AbilityUserService service) {
         super(player);
