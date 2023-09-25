@@ -54,24 +54,27 @@ public class AbilityInstanceService {
                         .publishOn(Schedulers.parallel())
                         .map(current -> {
                             // Ability Collision - Start
-                            if (current instanceof CollidableAbility collidableAbility && !collidableAbility.getColliders().isEmpty()) {
-                                ICollisionDeclaration declaration = collidableAbility.getCollisionDeclaration();
-                                Collection<Class<? extends CollidableAbility>> destructible = declaration.getDestructible();
-                                for (Class<? extends CollidableAbility> otherClass : destructible) {
-                                    for (CollidableAbility other : this.instances(otherClass)
-                                            .map(other -> (CollidableAbility) other)
-                                            .filter(other -> !other.getColliders().isEmpty())
-                                            .toList()) {
-                                        boolean otherDestructCurrent = other.getCollisionDeclaration().isDestruct(collidableAbility);
-                                        for (Collider otherCollider : other.getColliders()) {
-                                            for (Collider collider : collidableAbility.getColliders()) {
-                                                if (collider.intersects(otherCollider)) {
-                                                    if (other.onCollide(otherCollider, collidableAbility, collider) == AbilityCollisionResult.DESTROY) {
-                                                        destroyed.add(ability);
-                                                    }
-                                                    if (otherDestructCurrent) {
-                                                        if (collidableAbility.onCollide(collider, other, otherCollider) == AbilityCollisionResult.DESTROY) {
-                                                            return AbilityTickStatus.DESTROY;
+                            if (current instanceof CollidableAbility collidableAbility) {
+                                Collection<Collider> colliders = collidableAbility.getColliders();
+                                if (!colliders.isEmpty()) {
+                                    ICollisionDeclaration declaration = collidableAbility.getCollisionDeclaration();
+                                    Collection<Class<? extends CollidableAbility>> destructible = declaration.getDestructible();
+                                    for (Class<? extends CollidableAbility> otherClass : destructible) {
+                                        for (CollidableAbility other : this.instances(otherClass)
+                                                .map(other -> (CollidableAbility) other)
+                                                .filter(other -> !other.getColliders().isEmpty())
+                                                .toList()) {
+                                            boolean otherDestructCurrent = other.getCollisionDeclaration().isDestruct(collidableAbility);
+                                            for (Collider otherCollider : other.getColliders()) {
+                                                for (Collider collider : colliders) {
+                                                    if (collider.intersects(otherCollider)) {
+                                                        if (other.onCollide(otherCollider, collidableAbility, collider) == AbilityCollisionResult.DESTROY) {
+                                                            destroyed.add(ability);
+                                                        }
+                                                        if (otherDestructCurrent) {
+                                                            if (collidableAbility.onCollide(collider, other, otherCollider) == AbilityCollisionResult.DESTROY) {
+                                                                return AbilityTickStatus.DESTROY;
+                                                            }
                                                         }
                                                     }
                                                 }
