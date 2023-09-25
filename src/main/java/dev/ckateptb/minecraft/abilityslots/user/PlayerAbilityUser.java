@@ -297,8 +297,9 @@ public class PlayerAbilityUser extends PlayerAbilityTarget implements AbilityUse
                             .replaceAll("%ability%", ability.getDisplayName()));
                 }
             }
-            scores.add(sb.toString());
-            Score score = objective.getScore(sb.toString());
+            String result = sb.toString().replaceAll("&", "§");
+            scores.add(result);
+            Score score = objective.getScore(result);
             // Only set the new score if it changes.
             if (score.getScore() != -slotIndex) {
                 score.setScore(-slotIndex);
@@ -330,7 +331,7 @@ public class PlayerAbilityUser extends PlayerAbilityTarget implements AbilityUse
             if (score.getScore() != -slotIndex) {
                 score.setScore(-slotIndex);
             }
-            scores.add(update);
+            scores.add(ChatColor.translateAlternateColorCodes('&', update));
             ++slotIndex;
         }
     }
