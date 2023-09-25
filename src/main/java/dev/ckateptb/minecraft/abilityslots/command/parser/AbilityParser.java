@@ -4,8 +4,8 @@ import cloud.commandframework.arguments.parser.ArgumentParseResult;
 import cloud.commandframework.arguments.parser.ArgumentParser;
 import cloud.commandframework.context.CommandContext;
 import cloud.commandframework.exceptions.parsing.NoInputProvidedException;
-import dev.ckateptb.minecraft.abilityslots.ability.category.AbilityCategory;
-import dev.ckateptb.minecraft.abilityslots.ability.category.service.AbilityCategoryService;
+import dev.ckateptb.minecraft.abilityslots.ability.declaration.IAbilityDeclaration;
+import dev.ckateptb.minecraft.abilityslots.ability.declaration.service.AbilityDeclarationService;
 import dev.ckateptb.minecraft.abilityslots.user.service.AbilityUserService;
 import lombok.RequiredArgsConstructor;
 import org.bukkit.command.CommandSender;
@@ -16,39 +16,40 @@ import java.util.List;
 import java.util.Queue;
 
 @RequiredArgsConstructor
-public class CategoryParser implements ArgumentParser<CommandSender, AbilityCategory> {
-    private final AbilityCategoryService categoryService;
+public class AbilityParser implements ArgumentParser<CommandSender, IAbilityDeclaration<?>> {
+    private final AbilityDeclarationService abilityService;
     private final AbilityUserService userService;
+
     @Override
     @SuppressWarnings("all")
-    public ArgumentParseResult<AbilityCategory> parse(CommandContext<CommandSender> context, Queue<String> inputQueue) {
+    public ArgumentParseResult<IAbilityDeclaration<?>> parse(CommandContext<CommandSender> context, Queue<String> inputQueue) {
         String input = inputQueue.peek();
         NoInputProvidedException exception = new NoInputProvidedException(
-                CategoryParser.class,
+                AbilityParser.class,
                 context
         );
         if (input == null) return ArgumentParseResult.failure(exception);
-        ArgumentParseResult<AbilityCategory> result = (ArgumentParseResult<AbilityCategory>) this.categoryService.findCategory(input).filter(category -> {
+        ArgumentParseResult<?> result = this.abilityService.findDeclaration(input).filter(category -> {
             if (context.getSender() instanceof Player player) {
                 return this.userService.getAbilityUser(player).canUse(category);
             }
             return true;
         }).map(ArgumentParseResult::success).orElse(ArgumentParseResult.failure(exception));
         inputQueue.remove();
-        return result;
+        return (ArgumentParseResult<IAbilityDeclaration<?>>) result;
     }
 
     @Override
     public @NotNull List<String> suggestions(@NotNull CommandContext<CommandSender> context, @NotNull String input) {
-        return this.categoryService.getCategories().stream()
-                .filter(category -> category.getName().toLowerCase().startsWith(input.toLowerCase()))
+        return this.abilityService.getDeclarations().stream()
+                .filter(declaration -> declaration.getName().toLowerCase().startsWith(input.toLowerCase()))
                 .filter(category -> {
                     if (context.getSender() instanceof Player player) {
                         return this.userService.getAbilityUser(player).canUse(category);
                     }
                     return true;
                 })
-                .map(AbilityCategory::getName)
+                .map(IAbilityDeclaration::getName)
                 .toList();
     }
 }
