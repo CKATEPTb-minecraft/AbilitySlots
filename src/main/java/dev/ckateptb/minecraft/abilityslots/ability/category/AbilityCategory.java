@@ -1,5 +1,6 @@
 package dev.ckateptb.minecraft.abilityslots.ability.category;
 
+import dev.ckateptb.minecraft.abilityslots.interfaces.DisplayNameHolder;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -8,7 +9,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-public abstract class AbilityCategory {
+public abstract class AbilityCategory implements DisplayNameHolder {
 
     /**
      * Системное название категории, которое используется при реализации в качестве ключа,

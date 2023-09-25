@@ -3,8 +3,9 @@ package dev.ckateptb.minecraft.abilityslots.ability.declaration;
 import dev.ckateptb.minecraft.abilityslots.ability.Ability;
 import dev.ckateptb.minecraft.abilityslots.ability.category.AbilityCategory;
 import dev.ckateptb.minecraft.abilityslots.ability.enums.ActivationMethod;
+import dev.ckateptb.minecraft.abilityslots.interfaces.DisplayNameHolder;
 
-public interface IAbilityDeclaration<A extends Ability> {
+public interface IAbilityDeclaration<A extends Ability> extends DisplayNameHolder {
     /**
      * Системное название способности, которое используется при реализации в качестве ключа,
      * в том числе и для файлов конфигурации. Название способности всегда должно быть уникальным, не зависимо от автора.
