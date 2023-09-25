@@ -37,8 +37,8 @@ dependencies {
     compileOnly("dev.ckateptb.minecraft:Varflex:1.0.2-SNAPSHOT")
     compileOnly("dev.ckateptb.minecraft:Colliders:1.3.0-SNAPSHOT")
     compileOnly("dev.ckateptb.minecraft:Caffeine:1.0.0-SNAPSHOT")
-    compileOnly("dev.ckateptb.minecraft:Supervisor:1.0.3-SNAPSHOT")
-    compileOnly("dev.ckateptb.minecraft:Chest:1.1.0-SNAPSHOT")
+    compileOnly("dev.ckateptb.minecraft:Supervisor:1.0.4-SNAPSHOT")
+    compileOnly("dev.ckateptb.minecraft:Chest:1.1.1-SNAPSHOT")
 
     implementation("ink.glowing:inkymessage:0.12.0-SNAPSHOT")
 
