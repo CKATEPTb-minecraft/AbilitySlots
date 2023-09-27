@@ -4,7 +4,6 @@ import dev.ckateptb.common.tableclothcontainer.annotation.Component;
 import dev.ckateptb.common.tableclothcontainer.annotation.PostConstruct;
 import dev.ckateptb.minecraft.abilityslots.AbilitySlots;
 import dev.ckateptb.minecraft.abilityslots.ability.Ability;
-import dev.ckateptb.minecraft.abilityslots.ability.category.AbilityCategory;
 import dev.ckateptb.minecraft.abilityslots.ability.declaration.IAbilityDeclaration;
 import dev.ckateptb.minecraft.abilityslots.user.PlayerAbilityUser;
 import dev.ckateptb.minecraft.abilityslots.user.service.AbilityUserService;
@@ -14,8 +13,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.time.Duration;
 
 @Component
 public class AbilitySlotsPlaceholderExpansion extends PlaceholderExpansion {
@@ -71,12 +68,25 @@ public class AbilitySlotsPlaceholderExpansion extends PlaceholderExpansion {
             case "formatted_ability_7" -> this.getAbility(user, 7, true);
             case "formatted_ability_8" -> this.getAbility(user, 8, true);
             case "formatted_ability_9" -> this.getAbility(user, 9, true);
-            case "formatted_ability_current" -> this.getAbility(user, 0, true);
+            case "formatted_ability_1_no_cd" -> this.getAbility(user, 1, true, false);
+            case "formatted_ability_2_no_cd" -> this.getAbility(user, 2, true, false);
+            case "formatted_ability_3_no_cd" -> this.getAbility(user, 3, true, false);
+            case "formatted_ability_4_no_cd" -> this.getAbility(user, 4, true, false);
+            case "formatted_ability_5_no_cd" -> this.getAbility(user, 5, true, false);
+            case "formatted_ability_6_no_cd" -> this.getAbility(user, 6, true, false);
+            case "formatted_ability_7_no_cd" -> this.getAbility(user, 7, true, false);
+            case "formatted_ability_8_no_cd" -> this.getAbility(user, 8, true, false);
+            case "formatted_ability_9_no_cd" -> this.getAbility(user, 9, true, false);
+            case "formatted_ability_current_no_cd" -> this.getAbility(user, 0, true, false);
             default -> null;
         };
     }
 
     private String getAbility(PlayerAbilityUser user, Integer slot, boolean formatted) {
+        return this.getAbility(user, slot, formatted, true);
+    }
+
+    private String getAbility(PlayerAbilityUser user, Integer slot, boolean formatted, boolean cooldowns) {
         IAbilityDeclaration<? extends Ability> ability;
         if (slot == 0) {
             ability = user.getSelectedAbility();
@@ -87,6 +97,6 @@ public class AbilitySlotsPlaceholderExpansion extends PlaceholderExpansion {
             return formatted ? this.userService.getConfig().getGlobal().getBoard().getEmpty() + ChatColor.RESET : null;
         }
         if (!formatted) return ability.getDisplayName();
-        else return ability.getFormattedName(user);
+        else return ability.getFormattedName(cooldowns ? user : null);
     }
 }
