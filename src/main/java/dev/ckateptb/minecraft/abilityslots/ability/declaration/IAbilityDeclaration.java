@@ -100,7 +100,7 @@ public interface IAbilityDeclaration<A extends Ability> extends DisplayNameHolde
      */
     default boolean isActivatedBy(ActivationMethod method) {
         for (ActivationMethod activationMethod : this.getActivationMethods()) {
-            if (activationMethod == method) {
+            if (activationMethod.equals(method)) {
                 return true;
             }
         }
