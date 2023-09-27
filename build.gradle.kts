@@ -28,6 +28,11 @@ repositories {
     maven("https://repo.animecraft.fun/repository/maven-snapshots/")
     maven("https://repo.glowing.ink/snapshots")
     maven("https://repo.extendedclip.com/content/repositories/placeholderapi/")
+
+    maven("https://jitpack.io")
+    maven("https://repo.codemc.org/repository/maven-public/")
+    maven("https://maven.enginehub.org/repo/") // WorldGuard
+    maven("https://ci.ender.zone/plugin/repository/everything/") // LWC
 }
 
 dependencies {
@@ -40,6 +45,14 @@ dependencies {
     compileOnly("dev.ckateptb.minecraft:Caffeine:1.0.0-SNAPSHOT")
     compileOnly("dev.ckateptb.minecraft:Supervisor:1.0.4-SNAPSHOT")
     compileOnly("dev.ckateptb.minecraft:Chest:1.1.1-SNAPSHOT")
+
+    // PROTECTION PLUGINS
+    compileOnly("com.github.TechFortress", "GriefPrevention", "16.17.1")
+    compileOnly("com.github.TownyAdvanced", "Towny", "0.97.5.0")
+    compileOnly("com.griefcraft.lwc", "LWCX", "2.2.6")
+    compileOnly("com.sk89q.worldguard", "worldguard-bukkit", "7.0.0") {
+        exclude(module = "bukkit")
+    }
 
     compileOnly("me.clip:placeholderapi:2.11.4")
 

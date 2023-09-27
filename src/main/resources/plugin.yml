@@ -5,3 +5,4 @@ api-version: 1.19
 authors: [ CKATEPTb ]
 description: Ability manager. Craft and use passive, combo, and slot-based abilities.
 depend: [ Atom, Nicotine, Supervisor, Varflex, Caffeine, Colliders, Chest, PlaceholderAPI ]
+softdepend: [ WorldGuard, GriefPrevention, Towny, LWC, LuckPerms ]
