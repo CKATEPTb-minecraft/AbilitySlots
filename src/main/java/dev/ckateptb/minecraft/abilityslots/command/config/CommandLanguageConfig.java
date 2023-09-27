@@ -26,7 +26,8 @@ public class CommandLanguageConfig {
     private String abilityDescription = "§8Instruction:";
     private String clickToBind = "Click to bind";
 
-    private String clearAll = "You have unbind all abilities list";
-    private String clearSlot = "You have unbind ability from slot %slot%";
-    private String successfulBind = "You have successfully bound the ability %ability% to slot %slot%";
+    private String clearAll = "§aYou have unbind all abilities list";
+    private String clearSlot = "§aYou have unbind ability from slot §8%slot%";
+
+    private String successfulBind = "§aYou have successfully bound the ability %ability%§r§a to slot §8%slot%";
 }

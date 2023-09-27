@@ -4,9 +4,7 @@ import cloud.commandframework.annotations.Argument;
 import cloud.commandframework.annotations.CommandMethod;
 import cloud.commandframework.annotations.CommandPermission;
 import cloud.commandframework.annotations.specifier.Range;
-import cloud.commandframework.annotations.suggestions.Suggestions;
 import cloud.commandframework.arguments.parser.ParserRegistry;
-import cloud.commandframework.context.CommandContext;
 import dev.ckateptb.common.tableclothcontainer.annotation.Component;
 import dev.ckateptb.minecraft.abilityslots.AbilitySlots;
 import dev.ckateptb.minecraft.abilityslots.ability.category.AbilityCategory;
@@ -18,6 +16,7 @@ import dev.ckateptb.minecraft.abilityslots.command.config.CommandLanguageConfig;
 import dev.ckateptb.minecraft.abilityslots.command.config.PresetLanguageConfig;
 import dev.ckateptb.minecraft.abilityslots.command.parser.AbilityParser;
 import dev.ckateptb.minecraft.abilityslots.command.parser.CategoryParser;
+import dev.ckateptb.minecraft.abilityslots.command.sender.AbilityCommandSender;
 import dev.ckateptb.minecraft.abilityslots.config.AbilitySlotsConfig;
 import dev.ckateptb.minecraft.abilityslots.interfaces.DisplayNameHolder;
 import dev.ckateptb.minecraft.abilityslots.user.PlayerAbilityUser;
@@ -36,9 +35,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static dev.ckateptb.minecraft.abilityslots.message.MessageFormatter.toComponent;
 
 @Getter
 @Component
@@ -71,20 +67,13 @@ public class AbilitySlotsCommand implements Command<AbilitySlots> {
         registry.registerParserSupplier(TypeToken.get(AbilityCategory.class), options -> new CategoryParser(this.categoryService, this.userService));
     }
 
-    @Suggestions("help")
-    public List<String> suggestionHelp(CommandContext<CommandSender> sender, String input) {
-        return Stream.of("help")
-                .filter(suggestion -> suggestion.toLowerCase().startsWith(input.toLowerCase()))
-                .collect(Collectors.toList());
-    }
-
-    @CommandMethod("abilityslots|as [help]")
+    @CommandMethod("abilityslots|as [help|h]")
     @CommandPermission("abilityslots.command.help")
-    public void help(CommandSender sender, @Argument(value = "help", suggestions = "help") String help) {
+    public void help(CommandSender sender) {
         CommandLanguageConfig config = this.config.getLanguage().getCommand();
         PresetLanguageConfig preset = config.getPreset();
         PluginDescriptionFile description = this.plugin.getDescription();
-        sender.sendMessage(toComponent(this.help,
+        AbilityCommandSender.of(sender).sendMessage(this.help,
                 "%plugin%", description.getName(),
                 "%version%", description.getVersion(),
                 "%open_author%", config.getOpenAuthor(),
@@ -97,20 +86,19 @@ public class AbilitySlotsCommand implements Command<AbilitySlots> {
                 "%preset_delete%", preset.getDelete(),
                 "%preset_bind%", preset.getBind(),
                 "%reload%", config.getReload()
-        ));
+        );
     }
 
     @CommandMethod("abilityslots|as bind|b <ability> [slot]")
     @CommandPermission("abilityslots.command.bind")
     @SuppressWarnings("all")
     public void bind(Player sender, @Argument("ability") IAbilityDeclaration ability, @Argument("slot") @Range(min = "1", max = "9") Integer slot) {
-        System.out.println(sender.getUniqueId());
         PlayerAbilityUser user = this.userService.getAbilityUser(sender);
         if (slot == null) slot = user.getInventory().getHeldItemSlot() + 1;
         user.setAbility(slot, ability);
-        sender.sendMessage(toComponent(this.getConfig().getLanguage().getCommand().getSuccessfulBind()
-                .replaceAll("%ability%", ability.getDisplayName())
-                .replaceAll("%slot%", String.valueOf(slot))));
+        AbilityCommandSender.of(sender).sendMessage(this.getConfig().getLanguage().getCommand().getSuccessfulBind()
+                .replaceAll("%ability%", ability.getFormattedName())
+                .replaceAll("%slot%", String.valueOf(slot)));
     }
 
     @CommandMethod("abilityslots|as display|d [category]")
@@ -187,14 +175,14 @@ public class AbilitySlotsCommand implements Command<AbilitySlots> {
         String categoryInfo = abilityPrefix + "&[" + category.getDisplayName() +
                 "](click:suggest /abilityslots display " + category.getName() + ")(hover:text " + abilityPrefix +
                 category.getDescription() + ")";
-        sender.sendMessage(toComponent(config.getDisplayAbilities().replaceAll("%category%", categoryInfo) + "\n&r" +
+        AbilityCommandSender.of(sender).sendMessage(config.getDisplayAbilities().replaceAll("%category%", categoryInfo) + "\n&r" +
                 config.getDisplayBindable() + "&r" +
                 (bindableAbilities.length() < 1 ? " " + config.getNoAbilitiesAvailable() : "\n" + bindableAbilities) + "\n&r" +
                 config.getDisplayPassives() + "&r" +
                 (passiveAbilities.length() < 1 ? " " + config.getNoAbilitiesAvailable() : "\n" + passiveAbilities) + "\n&r" +
                 config.getDisplaySequences() + "&r" +
                 (sequenceAbilities.length() < 1 ? " " + config.getNoAbilitiesAvailable() : "\n" + sequenceAbilities)
-        ));
+        );
     }
 
     private void displayCategories(CommandSender sender) {
@@ -210,11 +198,11 @@ public class AbilitySlotsCommand implements Command<AbilitySlots> {
                 .map(o -> "&[" + o.getDisplayName() + "](click:suggest /abilityslots display " + o.getName() + ")" +
                         "(hover:text " + o.getAbilityPrefix() + o.getDescription() + ")")
                 .collect(Collectors.joining("&r, "));
-        sender.sendMessage(toComponent(
+        AbilityCommandSender.of(sender).sendMessage(
                 config.getDisplayCategories() +
                         "&r " +
                         (allowedCategories.length() > 0 ? allowedCategories : config.getNoCategoriesAvailable())
-        ));
+        );
     }
 
     @CommandMethod("abilityslots|as reload|r")
@@ -222,9 +210,10 @@ public class AbilitySlotsCommand implements Command<AbilitySlots> {
     public void reload(CommandSender sender) {
         CommandLanguageConfig config = this.config.getLanguage().getCommand();
         PluginDescriptionFile description = this.plugin.getDescription();
-        sender.sendMessage(toComponent(config.getReloadStart()
+        AbilityCommandSender.of(sender).sendMessage(config.getReloadStart()
                 .replaceAll("%plugin%", description.getName())
-                .replaceAll("%version%", description.getVersion())));
+                .replaceAll("%version%", description.getVersion())
+        );
         this.plugin.reload();
     }
 
@@ -238,10 +227,10 @@ public class AbilitySlotsCommand implements Command<AbilitySlots> {
                 user.setAbility(i, null, false);
             }
             user.saveCurrentBoard();
-            sender.sendMessage(toComponent(config.getClearAll()));
+            AbilityCommandSender.of(sender).sendMessage(config.getClearAll());
         } else {
             user.setAbility(slot, null);
-            sender.sendMessage(toComponent(config.getClearSlot().replaceAll("%slot%", String.valueOf(slot))));
+            AbilityCommandSender.of(sender).sendMessage(config.getClearSlot().replaceAll("%slot%", String.valueOf(slot)));
         }
     }
 }
