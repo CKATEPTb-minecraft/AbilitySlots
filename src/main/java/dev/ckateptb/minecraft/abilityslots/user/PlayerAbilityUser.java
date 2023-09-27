@@ -306,12 +306,7 @@ public class PlayerAbilityUser extends PlayerAbilityTarget implements AbilityUse
                     if (updates.isEmpty()) {
                         updates.add(config.getComboDivider());
                     }
-                    updates.add(getUniquePrefix(slotIndex) + config.getCooldown()
-                            .replaceAll("%category_prefix%", ability.getCategory().getAbilityPrefix())
-                            .replaceAll("%ability%", ability.getDisplayName())
-                            .replaceAll("%cooldown%", String.valueOf(
-                                    Duration.ofMillis(this.getCooldown(ability) - System.currentTimeMillis()).getSeconds()
-                            )));
+                    updates.add(getUniquePrefix(slotIndex) + ability.getFormattedName(this));
                 }
             }
         }
