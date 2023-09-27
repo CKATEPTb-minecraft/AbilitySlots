@@ -54,6 +54,7 @@ public class AbilityActivationListener implements Listener {
                 .map(IAbilityDeclaration::createAbility)
                 .ifPresent(ability -> {
                     ability.setUser(user);
+                    ability.setWorld(user.getWorld());
                     if (ability.activate(atomicActivation.get()) == AbilityActivateStatus.ACTIVATE) {
                         instanceService.register(ability);
                     }
