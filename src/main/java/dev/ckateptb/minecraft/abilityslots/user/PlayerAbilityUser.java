@@ -19,6 +19,7 @@ import dev.ckateptb.minecraft.abilityslots.energy.event.PlayerEnergyChangeEvent;
 import dev.ckateptb.minecraft.abilityslots.entity.PlayerAbilityTarget;
 import dev.ckateptb.minecraft.abilityslots.predicate.AbilityConditional;
 import dev.ckateptb.minecraft.abilityslots.predicate.CategoryConditional;
+import dev.ckateptb.minecraft.abilityslots.protection.service.ProtectionService;
 import dev.ckateptb.minecraft.abilityslots.user.service.AbilityUserService;
 import dev.ckateptb.minecraft.colliders.internal.math3.util.FastMath;
 import lombok.SneakyThrows;
@@ -26,6 +27,7 @@ import net.kyori.adventure.text.Component;
 import org.apache.commons.lang3.Validate;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
 import org.bukkit.boss.BossBar;
 import org.bukkit.entity.Player;
 import org.bukkit.scoreboard.*;
@@ -104,6 +106,10 @@ public class PlayerAbilityUser extends PlayerAbilityTarget implements AbilityUse
 
     public boolean canUse(AbilityCategory category) {
         return new CategoryConditional.Builder().hasPermission().build().matches(this, category);
+    }
+
+    public boolean canUse(Location location) {
+        return this.service.getProtectionService().canUse(this, location);
     }
 
     @Override

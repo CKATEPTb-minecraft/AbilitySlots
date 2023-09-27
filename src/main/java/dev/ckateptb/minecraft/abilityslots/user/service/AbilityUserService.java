@@ -7,6 +7,7 @@ import dev.ckateptb.minecraft.abilityslots.config.AbilitySlotsConfig;
 import dev.ckateptb.minecraft.abilityslots.database.preset.repository.AbilityBoardPresetRepository;
 import dev.ckateptb.minecraft.abilityslots.database.user.repository.UserBoardRepository;
 import dev.ckateptb.minecraft.abilityslots.event.AbilitySlotsReloadEvent;
+import dev.ckateptb.minecraft.abilityslots.protection.service.ProtectionService;
 import dev.ckateptb.minecraft.abilityslots.user.AbilityUser;
 import dev.ckateptb.minecraft.abilityslots.user.PlayerAbilityUser;
 import lombok.Getter;
@@ -35,6 +36,8 @@ public class AbilityUserService implements Listener {
     private final AbilityBoardPresetRepository presetRepository;
     @Getter
     private final UserBoardRepository boardsRepository;
+    @Getter
+    private final ProtectionService protectionService;
 
     public synchronized AbilityUser getAbilityUser(LivingEntity livingEntity) {
         throw new NotImplementedException();
