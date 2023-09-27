@@ -59,8 +59,8 @@ public class AbilityCommandSender implements CommandSender {
     }
 
     private interface Exclude {
-        void sendMessage(@NotNull String message);
+        void sendMessage(String message);
 
-        void sendMessage(@NotNull String... messages);
+        void sendMessage(String... messages);
     }
 }
