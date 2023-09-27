@@ -35,6 +35,7 @@ import reactor.core.scheduler.Schedulers;
 import java.lang.reflect.Method;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.stream.Stream;
 
 public class PlayerAbilityUser extends PlayerAbilityTarget implements AbilityUser, EnergyBoardHolder, AbilityBoardHolder {
     protected final IAbilityDeclaration<? extends Ability>[] abilities = new IAbilityDeclaration<?>[9];
@@ -87,6 +88,10 @@ public class PlayerAbilityUser extends PlayerAbilityTarget implements AbilityUse
         if (save) {
             this.saveCurrentBoard();
         }
+    }
+
+    public Stream<Ability> getAbilityInstances() {
+        return this.service.getAbilityInstanceService().instances(this);
     }
 
     public synchronized List<AbilityAction> registerAction(AbilityAction action) {
