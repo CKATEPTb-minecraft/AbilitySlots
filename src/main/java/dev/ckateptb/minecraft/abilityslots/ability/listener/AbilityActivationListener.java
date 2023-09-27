@@ -50,6 +50,7 @@ public class AbilityActivationListener implements Listener {
                     atomicActivation.set(activation);
                     return Optional.of(declaration);
                 })
+                .filter(ability -> ability.isActivatedBy(atomicActivation.get()))
                 .map(IAbilityDeclaration::createAbility)
                 .ifPresent(ability -> {
                     ability.setUser(user);
