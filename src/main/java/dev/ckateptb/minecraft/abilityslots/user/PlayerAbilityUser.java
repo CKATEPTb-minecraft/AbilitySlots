@@ -284,18 +284,7 @@ public class PlayerAbilityUser extends PlayerAbilityTarget implements AbilityUse
             if (ability == null) {
                 sb.append(config.getEmpty());
             } else {
-                if (this.hasCooldown(ability)) {
-                    sb.append(config.getCooldown()
-                            .replaceAll("%category_prefix%", ability.getCategory().getAbilityPrefix())
-                            .replaceAll("%ability%", ability.getDisplayName())
-                            .replaceAll("%cooldown%", String.valueOf(
-                                    Duration.ofMillis(this.getCooldown(ability) - System.currentTimeMillis()).getSeconds()
-                            )));
-                } else {
-                    sb.append(config.getAbility()
-                            .replaceAll("%category_prefix%", ability.getCategory().getAbilityPrefix())
-                            .replaceAll("%ability%", ability.getDisplayName()));
-                }
+                sb.append(ability.getFormattedName(this));
             }
             String result = sb.toString().replaceAll("&", "§");
             scores.add(result);

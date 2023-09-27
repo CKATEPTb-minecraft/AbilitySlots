@@ -86,16 +86,7 @@ public class AbilitySlotsPlaceholderExpansion extends PlaceholderExpansion {
         if (ability == null) {
             return formatted ? this.userService.getConfig().getGlobal().getBoard().getEmpty() + ChatColor.RESET : null;
         }
-        String displayName = ability.getDisplayName();
-        if (!formatted) return displayName;
-        AbilityCategory category = ability.getCategory();
-        String abilityPrefix = category.getAbilityPrefix();
-        String withoutCooldown = abilityPrefix + displayName;
-        if (user.hasCooldown(ability)) {
-            return ChatColor.translateAlternateColorCodes('&',
-                    "&m" + withoutCooldown + "&r" + abilityPrefix + " - " + Duration.ofMillis(
-                            user.getCooldown(ability) - System.currentTimeMillis()
-                    ).getSeconds() + "&r");
-        } else return withoutCooldown;
+        if (!formatted) return ability.getDisplayName();
+        else return ability.getFormattedName(user);
     }
 }

@@ -4,6 +4,11 @@ import dev.ckateptb.minecraft.abilityslots.ability.Ability;
 import dev.ckateptb.minecraft.abilityslots.ability.category.AbilityCategory;
 import dev.ckateptb.minecraft.abilityslots.ability.enums.ActivationMethod;
 import dev.ckateptb.minecraft.abilityslots.interfaces.DisplayNameHolder;
+import dev.ckateptb.minecraft.abilityslots.user.AbilityUser;
+import org.bukkit.ChatColor;
+import org.jetbrains.annotations.Nullable;
+
+import java.time.Duration;
 
 public interface IAbilityDeclaration<A extends Ability> extends DisplayNameHolder {
     /**
@@ -43,6 +48,23 @@ public interface IAbilityDeclaration<A extends Ability> extends DisplayNameHolde
      * @return Отображаемое название способности.
      */
     String getDisplayName();
+
+    default String getFormattedName() {
+        return this.getFormattedName(null);
+    }
+
+    default String getFormattedName(@Nullable AbilityUser user) {
+        String displayName = this.getDisplayName();
+        AbilityCategory category = this.getCategory();
+        String abilityPrefix = category.getAbilityPrefix();
+        String withoutCooldown = abilityPrefix + displayName;
+        if (user != null && user.hasCooldown(this)) {
+            return ChatColor.translateAlternateColorCodes('&',
+                    "&m" + withoutCooldown + "&r" + abilityPrefix + " - " + Duration.ofMillis(
+                            user.getCooldown(this) - System.currentTimeMillis()
+                    ).getSeconds() + "&r");
+        } else return withoutCooldown;
+    }
 
     /**
      * Детальное описание способности.
