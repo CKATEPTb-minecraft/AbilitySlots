@@ -27,6 +27,7 @@ repositories {
     mavenCentral()
     maven("https://repo.animecraft.fun/repository/maven-snapshots/")
     maven("https://repo.glowing.ink/snapshots")
+    maven("https://repo.extendedclip.com/content/repositories/placeholderapi/")
 }
 
 dependencies {
@@ -39,6 +40,8 @@ dependencies {
     compileOnly("dev.ckateptb.minecraft:Caffeine:1.0.0-SNAPSHOT")
     compileOnly("dev.ckateptb.minecraft:Supervisor:1.0.4-SNAPSHOT")
     compileOnly("dev.ckateptb.minecraft:Chest:1.1.1-SNAPSHOT")
+
+    compileOnly("me.clip:placeholderapi:2.11.4")
 
     implementation("ink.glowing:inkymessage:0.12.0-SNAPSHOT")
 
