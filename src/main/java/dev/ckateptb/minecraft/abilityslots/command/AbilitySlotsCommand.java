@@ -31,6 +31,8 @@ import org.bukkit.entity.Player;
 
 import java.util.List;
 
+// TODO Реализовать пресеты
+
 @Getter
 @Component
 @RequiredArgsConstructor
