@@ -71,7 +71,7 @@ public class AbilityUserService implements Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.NORMAL)
+    @EventHandler(priority = EventPriority.HIGHEST)
     private synchronized void on(AbilitySlotsReloadEvent event) {
         this.users.forEach((uuid, user) -> {
             if(user instanceof PlayerAbilityUser player) player.hideEnergyBoard();
