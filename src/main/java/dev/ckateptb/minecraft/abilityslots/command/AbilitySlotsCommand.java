@@ -19,6 +19,10 @@ import dev.ckateptb.minecraft.abilityslots.command.display.DisplayCommand;
 import dev.ckateptb.minecraft.abilityslots.command.help.HelpCommand;
 import dev.ckateptb.minecraft.abilityslots.command.parser.AbilityParser;
 import dev.ckateptb.minecraft.abilityslots.command.parser.CategoryParser;
+import dev.ckateptb.minecraft.abilityslots.command.preset.bind.PresetBindCommand;
+import dev.ckateptb.minecraft.abilityslots.command.preset.create.PresetCreateCommand;
+import dev.ckateptb.minecraft.abilityslots.command.preset.delete.PresetDeleteCommand;
+import dev.ckateptb.minecraft.abilityslots.command.preset.list.PresetListCommand;
 import dev.ckateptb.minecraft.abilityslots.command.reload.ReloadCommand;
 import dev.ckateptb.minecraft.abilityslots.command.who.WhoCommand;
 import dev.ckateptb.minecraft.abilityslots.user.service.AbilityUserService;
@@ -29,9 +33,8 @@ import lombok.RequiredArgsConstructor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
+import java.util.Collections;
 import java.util.List;
-
-// TODO Реализовать пресеты
 
 @Getter
 @Component
@@ -50,6 +53,10 @@ public class AbilitySlotsCommand implements Command<AbilitySlots> {
     private final ReloadCommand reload;
     private final ClearCommand clear;
     private final WhoCommand who;
+    private final PresetListCommand presetList;
+    private final PresetCreateCommand presetCreate;
+    private final PresetDeleteCommand presetDelete;
+    private final PresetBindCommand presetBind;
 
     @Override
     public void parserRegistry(ParserRegistry<CommandSender> registry) {
@@ -99,5 +106,39 @@ public class AbilitySlotsCommand implements Command<AbilitySlots> {
     @CommandPermission("abilityslots.command.who")
     public void processWho(CommandSender sender, @Argument("target") Player player) {
         this.who.process(sender, player);
+    }
+
+    @CommandMethod("abilityslots|as preset|p list|l")
+    @CommandPermission("abilityslots.command.preset.list")
+    public void processPresetList(Player sender) {
+        this.presetList.process(sender);
+    }
+
+    @CommandMethod("abilityslots|as preset|p create|c <name>")
+    @CommandPermission("abilityslots.command.preset.create")
+    public void processPresetCreate(Player sender, @Argument("name") String name) {
+        this.presetCreate.process(sender, name);
+    }
+
+    @Suggestions("preset")
+    public List<String> suggestionPreset(CommandContext<CommandSender> context, String input) {
+        CommandSender sender = context.getSender();
+        if (sender instanceof Player player) {
+            return this.userService.getAbilityUser(player).getPresets().stream()
+                    .filter(preset -> preset.trim().toLowerCase().startsWith(input.trim().toLowerCase()))
+                    .toList();
+        } else return Collections.emptyList();
+    }
+
+    @CommandMethod("abilityslots|as preset|p delete|d <name>")
+    @CommandPermission("abilityslots.command.preset.delete")
+    public void processPresetDelete(Player sender, @Argument(value = "name", suggestions = "preset") String name) {
+        this.presetDelete.process(sender, name);
+    }
+
+    @CommandMethod("abilityslots|as preset|p bind|b <name>")
+    @CommandPermission("abilityslots.command.preset.bind")
+    public void processPresetBind(Player sender, @Argument(value = "name", suggestions = "preset") String name) {
+        this.presetBind.process(sender, name);
     }
 }

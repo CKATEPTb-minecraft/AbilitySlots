@@ -47,14 +47,13 @@ public class AbilityCommandSender implements CommandSender {
     public void sendMessage(@NotNull String... messages) {
         if (messages.length > 1) {
             List<String> list = Arrays.stream(messages)
-                    .map(message -> message.replaceAll("&", "§"))
+                    .map(message -> ChatColor.translateAlternateColorCodes('&', message))
                     .collect(Collectors.toList());
             Component component = MessageFormatter.toComponent(list.remove(0), list.toArray(String[]::new));
             InkyMessage serializer = InkyMessage.inkyMessage();
-            String result = serializer.serialize(component)
-                    .replaceAll("&", "§")
+            String result = ChatColor.translateAlternateColorCodes('&', serializer.serialize(component)
                     .replace("\\\\(", "(")
-                    .replace("\\\\)", ")");
+                    .replace("\\\\)", ")"));
             this.handle_.sendMessage(serializer.deserialize(result));
         }
     }
