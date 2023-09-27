@@ -1,15 +1,18 @@
 package dev.ckateptb.minecraft.abilityslots.command.sender;
 
 import dev.ckateptb.minecraft.abilityslots.message.MessageFormatter;
+import ink.glowing.text.InkyMessage;
 import lombok.experimental.Delegate;
+import net.kyori.adventure.text.Component;
+import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class AbilityCommandSender implements CommandSender {
     public static AbilityCommandSender of(CommandSender commandSender) {
@@ -31,7 +34,7 @@ public class AbilityCommandSender implements CommandSender {
      */
     @Override
     public void sendMessage(@NotNull String message) {
-        this.handle_.sendMessage(MessageFormatter.toComponent(message));
+        this.handle_.sendMessage(MessageFormatter.toComponent(ChatColor.translateAlternateColorCodes('&', message)));
     }
 
     /**
@@ -43,8 +46,16 @@ public class AbilityCommandSender implements CommandSender {
     @Override
     public void sendMessage(@NotNull String... messages) {
         if (messages.length > 1) {
-            List<String> list = new ArrayList<>(Arrays.asList(messages));
-            this.handle_.sendMessage(MessageFormatter.toComponent(list.remove(0), list.toArray(String[]::new)));
+            List<String> list = Arrays.stream(messages)
+                    .map(message -> message.replaceAll("&", "§"))
+                    .collect(Collectors.toList());
+            Component component = MessageFormatter.toComponent(list.remove(0), list.toArray(String[]::new));
+            InkyMessage serializer = InkyMessage.inkyMessage();
+            String result = serializer.serialize(component)
+                    .replaceAll("&", "§")
+                    .replace("\\\\(", "(")
+                    .replace("\\\\)", ")");
+            this.handle_.sendMessage(serializer.deserialize(result));
         }
     }
 

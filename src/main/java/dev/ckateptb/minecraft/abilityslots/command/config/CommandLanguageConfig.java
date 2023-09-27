@@ -30,4 +30,25 @@ public class CommandLanguageConfig {
     private String clearSlot = "§aYou have unbind ability from slot §8%slot%";
 
     private String successfulBind = "§aYou have successfully bound the ability %ability%§r§a to slot §8%slot%";
+
+    private String whoPlayer = """
+                        &aList of player abilities &6%player%&r&a:&r
+                        &[%ability_1%](hover:text &r&8Description: &r%prefix_1%%description_1%
+                        &r&8Instruction: &r%prefix_1%%instruction_1%)
+                        &[%ability_2%](hover:text &r&8Description: &r%prefix_2%%description_2%
+                        &r&8Instruction: &r%prefix_2%%instruction_2%)
+                        &[%ability_3%](hover:text &r&8Description: &r%prefix_3%%description_3%
+                        &r&8Instruction: &r%prefix_3%%instruction_3%)
+                        &[%ability_4%](hover:text &r&8Description: &r%prefix_4%%description_4%
+                        &r&8Instruction: &r%prefix_4%%instruction_4%)
+                        &[%ability_5%](hover:text &r&8Description: &r%prefix_5%%description_5%
+                        &r&8Instruction: &r%prefix_5%%instruction_5%)
+                        &[%ability_6%](hover:text &r&8Description: &r%prefix_6%%description_6%
+                        &r&8Instruction: &r%prefix_6%%instruction_6%)
+                        &[%ability_7%](hover:text &r&8Description: &r%prefix_7%%description_7%
+                        &r&8Instruction: &r%prefix_7%%instruction_7%)
+                        &[%ability_8%](hover:text &r&8Description: &r%prefix_8%%description_8%
+                        &r&8Instruction: &r%prefix_8%%instruction_8%)
+                        &[%ability_9%](hover:text &r&8Description: &r%prefix_9%%description_9%
+                        &r&8Instruction: &r%prefix_9%%instruction_9%)""";
 }
