@@ -19,7 +19,6 @@ import dev.ckateptb.minecraft.abilityslots.energy.event.PlayerEnergyChangeEvent;
 import dev.ckateptb.minecraft.abilityslots.entity.PlayerAbilityTarget;
 import dev.ckateptb.minecraft.abilityslots.predicate.AbilityConditional;
 import dev.ckateptb.minecraft.abilityslots.predicate.CategoryConditional;
-import dev.ckateptb.minecraft.abilityslots.protection.service.ProtectionService;
 import dev.ckateptb.minecraft.abilityslots.user.service.AbilityUserService;
 import dev.ckateptb.minecraft.colliders.internal.math3.util.FastMath;
 import lombok.SneakyThrows;
@@ -105,7 +104,7 @@ public class PlayerAbilityUser extends PlayerAbilityTarget implements AbilityUse
     }
 
     public boolean canUse(AbilityCategory category) {
-        return new CategoryConditional.Builder().hasPermission().build().matches(this, category);
+        return new CategoryConditional.Builder().hasPermission().isEnabled().build().matches(this, category);
     }
 
     public boolean canUse(Location location) {
@@ -117,6 +116,7 @@ public class PlayerAbilityUser extends PlayerAbilityTarget implements AbilityUse
         return new AbilityConditional.Builder()
                 .hasPermission()
                 .hasCategory()
+                .isCategoryEnabled()
                 .isEnabled()
                 .isBindable()
                 .build().matches(this, ability);

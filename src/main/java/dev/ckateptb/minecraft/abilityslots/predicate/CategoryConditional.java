@@ -10,12 +10,19 @@ import java.util.Set;
 public interface CategoryConditional extends Conditional<AbilityCategory> {
     CategoryConditional HAS_CATEGORY_PERMISSION = (user, category) -> category != null && user.hasPermission(String.format("abilityslots.abilities.%s", category.getName()).toLowerCase());
 
+    CategoryConditional IS_ENABLED = (user, category) -> category != null && category.isEnabled();
+
     @NoArgsConstructor
     class Builder {
         private final Set<CategoryConditional> conditionals = new HashSet<>();
 
         public Builder hasPermission() {
             conditionals.add(HAS_CATEGORY_PERMISSION);
+            return this;
+        }
+
+        public Builder isEnabled() {
+            conditionals.add(IS_ENABLED);
             return this;
         }
 

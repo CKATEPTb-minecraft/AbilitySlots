@@ -21,6 +21,8 @@ public interface AbilityConditional extends Conditional<IAbilityDeclaration<? ex
 
     AbilityConditional IS_ENABLED = (user, ability) -> ability != null && ability.isEnabled();
 
+    AbilityConditional IS_CATEGORY_ENABLED = (user, ability) -> ability != null && CategoryConditional.IS_ENABLED.matches(user, ability.getCategory());
+
     @NoArgsConstructor
     class Builder {
         private final Set<AbilityConditional> conditionals = new HashSet<>();
@@ -42,6 +44,11 @@ public interface AbilityConditional extends Conditional<IAbilityDeclaration<? ex
 
         public Builder hasCategory() {
             conditionals.add(HAS_ABILITY_CATEGORY_PERMISSION);
+            return this;
+        }
+
+        public Builder isCategoryEnabled() {
+            conditionals.add(IS_CATEGORY_ENABLED);
             return this;
         }
 
