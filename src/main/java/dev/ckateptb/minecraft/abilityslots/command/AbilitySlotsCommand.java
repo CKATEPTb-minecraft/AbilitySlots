@@ -4,7 +4,9 @@ import cloud.commandframework.annotations.Argument;
 import cloud.commandframework.annotations.CommandMethod;
 import cloud.commandframework.annotations.CommandPermission;
 import cloud.commandframework.annotations.specifier.Range;
+import cloud.commandframework.annotations.suggestions.Suggestions;
 import cloud.commandframework.arguments.parser.ParserRegistry;
+import cloud.commandframework.context.CommandContext;
 import dev.ckateptb.common.tableclothcontainer.annotation.Component;
 import dev.ckateptb.minecraft.abilityslots.AbilitySlots;
 import dev.ckateptb.minecraft.abilityslots.ability.category.AbilityCategory;
@@ -35,6 +37,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Getter
 @Component
@@ -67,9 +70,16 @@ public class AbilitySlotsCommand implements Command<AbilitySlots> {
         registry.registerParserSupplier(TypeToken.get(AbilityCategory.class), options -> new CategoryParser(this.categoryService, this.userService));
     }
 
-    @CommandMethod("abilityslots|as [help|h]")
+    @Suggestions("help")
+    public List<String> suggestionHelp(CommandContext<CommandSender> sender, String input) {
+        return Stream.of("help")
+                .filter(suggestion -> suggestion.toLowerCase().startsWith(input.toLowerCase()))
+                .collect(Collectors.toList());
+    }
+
+    @CommandMethod("abilityslots|as [help]")
     @CommandPermission("abilityslots.command.help")
-    public void help(CommandSender sender) {
+    public void help(CommandSender sender, @Argument(value = "help", suggestions = "help") String ignore) {
         CommandLanguageConfig config = this.config.getLanguage().getCommand();
         PresetLanguageConfig preset = config.getPreset();
         PluginDescriptionFile description = this.plugin.getDescription();
