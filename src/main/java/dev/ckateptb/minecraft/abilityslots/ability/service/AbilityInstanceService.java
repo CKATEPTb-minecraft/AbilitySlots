@@ -86,12 +86,12 @@ public class AbilityInstanceService {
                             // Ability Collision - End
                             return current.tick();
                         })
-                        .timeout(Duration.of(50, ChronoUnit.MILLIS), Schedulers.parallel())
+                        .timeout(Duration.of(50, ChronoUnit.MILLIS), Schedulers.parallel()) // TODO Вынести время, когда способность считается зависшей в конфиг
                         .onErrorReturn(throwable -> {
                             IAbilityDeclaration<? extends Ability> declaration = ability.getDeclaration();
                             String name = declaration.getName();
                             String author = declaration.getAuthor();
-                            if (throwable instanceof TimeoutException) {
+                            if (throwable instanceof TimeoutException) { // TODO вынести этот варн в конфиг
                                 log.warn("{} ability processing timed out and was destroyed to prevent lags." +
                                         " Contact the author {}.", name, author);
                             } else {
