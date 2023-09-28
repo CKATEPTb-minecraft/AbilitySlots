@@ -26,6 +26,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.inventory.EquipmentSlot;
+import reactor.core.scheduler.Schedulers;
 
 import java.util.List;
 import java.util.Optional;
@@ -41,32 +42,34 @@ public class AbilityActivationListener implements Listener {
 
     @SuppressWarnings("unchecked")
     private void activate(PlayerAbilityUser user, ActivationMethod activation) {
-        IAbilityDeclaration<? extends Ability> declaration = user.getSelectedAbility();
-        if (declaration == null || !user.canUse(declaration)) return;
-        AbilityAction action = this.sequenceService.createAction(declaration.getAbilityClass(), activation);
-        List<AbilityAction> actions = user.registerAction(action);
-        if (actions.size() > this.sequenceService.getMaxActionsSize()) actions.remove(0);
-        AtomicReference<ActivationMethod> atomicActivation = new AtomicReference<>(ActivationMethod.SEQUENCE);
-        this.sequenceService.findSequence(actions) // Выполнил ли пользователь условия для какого-то Sequence
-                .filter(user::canUse) // Может ли пользователь использовать Sequence
-                .or(() -> { // Если Sequence не найден, или у пользователя нет прав, переключаемся на выбранную способности
-                    atomicActivation.set(activation);
-                    return Optional.of(declaration);
-                })
-                .filter(ability -> ability.isActivatedBy(atomicActivation.get()))
-                .map(IAbilityDeclaration::createAbility)
-                .ifPresent(ability -> {
-                    ability.setUser(user);
-                    ability.setWorld(user.getWorld());
-                    if (ability instanceof CollidableAbility collidableAbility) {
-                        this.collisionDeclarationService
-                                .findDeclaration((IAbilityDeclaration<? extends CollidableAbility>) declaration)
-                                .ifPresent(collidableAbility::setCollisionDeclaration);
-                    }
-                    if (ability.activate(atomicActivation.get()) == AbilityActivateStatus.ACTIVATE) {
-                        this.instanceService.register(ability);
-                    }
-                });
+        Schedulers.boundedElastic().schedule(() -> {
+            IAbilityDeclaration<? extends Ability> declaration = user.getSelectedAbility();
+            if (declaration == null || !user.canUse(declaration)) return;
+            AbilityAction action = this.sequenceService.createAction(declaration.getAbilityClass(), activation);
+            List<AbilityAction> actions = user.registerAction(action);
+            if (actions.size() > this.sequenceService.getMaxActionsSize()) actions.remove(0);
+            AtomicReference<ActivationMethod> atomicActivation = new AtomicReference<>(ActivationMethod.SEQUENCE);
+            this.sequenceService.findSequence(actions) // Выполнил ли пользователь условия для какого-то Sequence
+                    .filter(user::canUse) // Может ли пользователь использовать Sequence
+                    .or(() -> { // Если Sequence не найден, или у пользователя нет прав, переключаемся на выбранную способности
+                        atomicActivation.set(activation);
+                        return Optional.of(declaration);
+                    })
+                    .filter(ability -> ability.isActivatedBy(atomicActivation.get()))
+                    .map(IAbilityDeclaration::createAbility)
+                    .ifPresent(ability -> {
+                        ability.setUser(user);
+                        ability.setWorld(user.getWorld());
+                        if (ability instanceof CollidableAbility collidableAbility) {
+                            this.collisionDeclarationService
+                                    .findDeclaration((IAbilityDeclaration<? extends CollidableAbility>) declaration)
+                                    .ifPresent(collidableAbility::setCollisionDeclaration);
+                        }
+                        if (ability.activate(atomicActivation.get()) == AbilityActivateStatus.ACTIVATE) {
+                            this.instanceService.register(ability);
+                        }
+                    });
+        });
     }
 
     @EventHandler

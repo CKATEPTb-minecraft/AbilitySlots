@@ -6,6 +6,7 @@ import dev.ckateptb.minecraft.abilityslots.ability.declaration.IAbilityDeclarati
 import dev.ckateptb.minecraft.abilityslots.ability.declaration.generated.annotation.AbilityDeclaration;
 import dev.ckateptb.minecraft.abilityslots.ability.enums.ActivationMethod;
 import dev.ckateptb.minecraft.abilityslots.event.AbilityCreateEvent;
+import dev.ckateptb.minecraft.atom.scheduler.SyncScheduler;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
@@ -57,7 +58,7 @@ public class GeneratedAbilityDeclaration<A extends Ability> implements IAbilityD
     public A createAbility() {
         A instance = this.newInstanceConstructor.newInstance();
         this.setDeclaration.invoke(instance, this);
-        Bukkit.getPluginManager().callEvent(new AbilityCreateEvent(instance));
+        new SyncScheduler().schedule(() -> Bukkit.getPluginManager().callEvent(new AbilityCreateEvent(instance)));
         return instance;
     }
 }
