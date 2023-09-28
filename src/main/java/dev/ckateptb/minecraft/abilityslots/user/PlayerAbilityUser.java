@@ -91,12 +91,12 @@ public class PlayerAbilityUser extends PlayerAbilityTarget implements AbilityUse
     }
 
     @Override
-    public Stream<Ability> getAbilityInstances() {
+    public synchronized Stream<Ability> getAbilityInstances() {
         return this.service.getAbilityInstanceService().instances(this);
     }
 
     @Override
-    public <T extends Ability> Stream<T> getAbilityInstances(Class<T> type) {
+    public synchronized <T extends Ability> Stream<T> getAbilityInstances(Class<T> type) {
         return this.getAbilityInstances().filter(ability -> ability.getClass().equals(type)).map(ability -> (T) ability);
     }
 

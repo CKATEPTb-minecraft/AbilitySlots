@@ -17,38 +17,113 @@ import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
+import reactor.util.function.Tuple2;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 @Component
 @CustomLog
 @RequiredArgsConstructor
 public class AbilityInstanceService {
-    private final Set<Ability> abilities = new HashSet<>();
+    private final Set<Ability> abilities = Collections.synchronizedSet(ConcurrentHashMap.newKeySet());
     private final AbilitySlotsConfig config;
+    private final Scheduler scheduler = Schedulers.newParallel("abilities", Runtime.getRuntime().availableProcessors() * 10, true);
 
     public void register(Ability ability) {
         this.abilities.add(ability);
     }
 
-    @Schedule(initialDelay = 20, fixedRate = 1, async = true)
+    @Schedule(initialDelay = 0, fixedRate = 1, async = true)
     private synchronized void process() {
-        int parallelism = this.abilities.size();
-        if (parallelism == 0) return;
-        Set<Ability> destroyed = this.processActive(parallelism);
-        this.processDestroy(destroyed);
+        LagPreventConfig lagPrevent = this.config.getGlobal().getLagPrevent();
+        List<Ability> block = Flux.fromIterable(this.abilities)
+                .subscribeOn(Schedulers.boundedElastic())
+                .zipWith(Mono.just(new AtomicReference<>(AbilityTickStatus.CONTINUE)))
+                .sort((t1, t2) -> { // Обработка столкновений
+                    Ability o1 = t1.getT1();
+                    Ability o2 = t2.getT1();
+                    if (o1 instanceof CollidableAbility first && o2 instanceof CollidableAbility second) {
+                        Collection<Collider> firstColliders = first.getColliders();
+                        Collection<Collider> secondColliders = second.getColliders();
+                        if (firstColliders == null || secondColliders == null ||
+                                firstColliders.isEmpty() || secondColliders.isEmpty() ||
+                                !first.getWorld().getUID().equals(second.getWorld().getUID()) ||
+                                first.getUser().getUniqueId().equals(second.getUser().getUniqueId())) return 0;
+                        boolean firstDestructSecond = first.getCollisionDeclaration().isDestruct(second);
+                        boolean secondDestructFirst = second.getCollisionDeclaration().isDestruct(first);
+                        if (firstDestructSecond || secondDestructFirst) {
+                            for (Collider collider : firstColliders) {
+                                if (collider == null) continue;
+                                for (Collider other : secondColliders) {
+                                    if (other == null) continue;
+                                    if (collider.intersects(other) || other.intersects(collider)) {
+                                        if (firstDestructSecond && second.onCollide(other, first, collider) == AbilityCollisionResult.DESTROY) {
+                                            t2.getT2().set(AbilityTickStatus.DESTROY);
+                                        }
+                                        if (secondDestructFirst && first.onCollide(collider, second, other) == AbilityCollisionResult.DESTROY) {
+                                            t1.getT2().set(AbilityTickStatus.DESTROY);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    return 0;
+                })
+                .flatMap(objects -> { // Обработка тика
+                            Ability t1 = objects.getT1();
+                            return Mono.just(t1)
+                                    .publishOn(scheduler)
+                                    .map(ability -> {
+                                        if (objects.getT2().get() == AbilityTickStatus.DESTROY) {
+                                            return AbilityTickStatus.DESTROY;
+                                        }
+                                        return ability.tick();
+                                    })
+                                    .timeout(Duration.of(lagPrevent.getLagThreshold(), ChronoUnit.MILLIS), scheduler)
+                                    .onErrorReturn(throwable -> {
+                                        IAbilityDeclaration<? extends Ability> declaration = t1.getDeclaration();
+                                        String name = declaration.getName();
+                                        String author = declaration.getAuthor();
+                                        if (throwable instanceof TimeoutException) {
+                                            if (lagPrevent.isAlertDestroyed()) {
+                                                log.warn("{} ability processing timed out and was destroyed to prevent lags." +
+                                                        " Contact the author {}.", name, author);
+                                            }
+                                        } else {
+                                            log.error("There was an error processing ability {} and has been called back." +
+                                                    " Contact the author {}.", name, author);
+                                            log.error(throwable.getMessage(), throwable);
+                                        }
+                                        return true;
+                                    }, AbilityTickStatus.DESTROY)
+                                    .map(status -> {
+                                        objects.getT2().set(status);
+                                        return objects;
+                                    });
+                        }
+                )
+                .filter(objects -> objects.getT2().get() == AbilityTickStatus.DESTROY)
+                .map(Tuple2::getT1)
+                .collectList()
+                .block(Duration.of(lagPrevent.getDropAllThreshold(), ChronoUnit.MILLIS));
+        if(block != null) {
+            block.forEach(this.abilities::remove);
+        }
     }
 
-    private Set<Ability> processActive(int parallelism) {
+    private void processActive() {
         LagPreventConfig lagPrevent = this.config.getGlobal().getLagPrevent();
-        Set<Ability> destroyed = Collections.synchronizedSet(new HashSet<>());
         Flux.fromIterable(this.abilities)
-                .subscribeOn(Schedulers.parallel())
+                .subscribeOn(Schedulers.boundedElastic())
                 .sort((o1, o2) -> {
                     // Ability Collision - Start
                     if (o1 instanceof CollidableAbility first && o2 instanceof CollidableAbility second) {
@@ -67,10 +142,10 @@ public class AbilityInstanceService {
                                     if (other == null) continue;
                                     if (collider.intersects(other) || other.intersects(collider)) {
                                         if (firstDestructSecond && second.onCollide(other, first, collider) == AbilityCollisionResult.DESTROY) {
-                                            destroyed.add(second);
+                                            this.destroy(second);
                                         }
                                         if (secondDestructFirst && first.onCollide(collider, second, other) == AbilityCollisionResult.DESTROY) {
-                                            destroyed.add(first);
+                                            this.destroy(first);
                                         }
                                     }
                                 }
@@ -80,13 +155,9 @@ public class AbilityInstanceService {
                     // Ability Collision - End
                     return 0;
                 })
-                .parallel(parallelism)
-                .runOn(Schedulers.parallel(), parallelism)
                 .flatMap(ability -> Mono.just(ability)
-                        .publishOn(Schedulers.parallel())
-                        .filter(value -> !destroyed.contains(value))
                         .map(Ability::tick)
-                        .timeout(Duration.of(lagPrevent.getLagThreshold(), ChronoUnit.MILLIS), Schedulers.parallel())
+                        .timeout(Duration.of(lagPrevent.getLagThreshold(), ChronoUnit.MILLIS))
                         .onErrorReturn(throwable -> {
                             IAbilityDeclaration<? extends Ability> declaration = ability.getDeclaration();
                             String name = declaration.getName();
@@ -105,13 +176,12 @@ public class AbilityInstanceService {
                         }, AbilityTickStatus.DESTROY)
                         .doOnNext(status -> {
                             if (status == AbilityTickStatus.DESTROY) {
-                                destroyed.add(ability);
+                                this.destroy(ability);
                             }
                         })
                 )
                 .then()
                 .block(Duration.of(lagPrevent.getDropAllThreshold(), ChronoUnit.MILLIS));
-        return destroyed;
     }
 
     public void destroy(Ability ability) {
