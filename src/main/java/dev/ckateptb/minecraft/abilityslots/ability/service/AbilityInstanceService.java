@@ -70,7 +70,9 @@ public class AbilityInstanceService {
                                                 .toList()) {
                                             boolean otherDestructCurrent = other.getCollisionDeclaration().isDestruct(collidableAbility);
                                             for (Collider otherCollider : other.getColliders()) {
+                                                if(otherCollider == null) continue;
                                                 for (Collider collider : colliders) {
+                                                    if(collider == null) continue;
                                                     if (collider.intersects(otherCollider)) {
                                                         if (other.onCollide(otherCollider, collidableAbility, collider) == AbilityCollisionResult.DESTROY) {
                                                             destroyed.add(ability);
