@@ -2,6 +2,7 @@ package dev.ckateptb.minecraft.abilityslots.ability.service;
 
 import com.google.common.collect.Sets;
 import dev.ckateptb.common.tableclothcontainer.annotation.Component;
+import dev.ckateptb.common.tableclothcontainer.annotation.PostConstruct;
 import dev.ckateptb.minecraft.abilityslots.ability.Ability;
 import dev.ckateptb.minecraft.abilityslots.ability.collision.CollidableAbility;
 import dev.ckateptb.minecraft.abilityslots.ability.collision.enums.AbilityCollisionResult;
@@ -17,6 +18,7 @@ import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.Sinks;
 import reactor.core.scheduler.Schedulers;
 
 import java.time.Duration;
@@ -30,7 +32,19 @@ import java.util.stream.Stream;
 @RequiredArgsConstructor
 public class AbilityInstanceService {
     private final Set<Ability> abilities = new HashSet<>();
+    private final Sinks.Many<Ability> destroy = Sinks.many().multicast().directBestEffort();
     private final AbilitySlotsConfig config;
+
+    @PostConstruct
+    public void init() {
+        System.out.println("Post construct");
+        this.destroy.asFlux()
+                .subscribeOn(Schedulers.boundedElastic())
+                .subscribe(ability -> {
+                    this.abilities.remove(ability);
+                    ability.destroy(null);
+                });
+    }
 
     public void register(Ability ability) {
         this.abilities.add(ability);
@@ -38,10 +52,58 @@ public class AbilityInstanceService {
 
     @Schedule(initialDelay = 20, fixedRate = 1, async = true)
     private synchronized void process() {
-        int parallelism = this.abilities.size();
-        if (parallelism == 0) return;
-        Set<Ability> destroyed = this.processActive(parallelism);
-        this.processDestroy(destroyed);
+        if(this.abilities.size() > 0) {
+            this.processActiveNew();
+            this.processColliders();
+        }
+    }
+
+    public void processActiveNew() {
+        Flux.fromIterable(this.abilities)
+                .parallel(this.abilities.size())
+                .runOn(Schedulers.parallel())
+                .subscribe(ability -> {
+                    if (ability.tick() == AbilityTickStatus.DESTROY) {
+                        this.destroy.tryEmitNext(ability);
+                    }
+                });
+    }
+
+    public void processColliders() {
+        Flux.fromIterable(this.abilities)
+                .subscribeOn(Schedulers.boundedElastic())
+                .sort((o1, o2) -> {
+                    // Ability Collision - Start
+                    if (o1 instanceof CollidableAbility first && o2 instanceof CollidableAbility second) {
+                        Collection<Collider> firstColliders = first.getColliders();
+                        if (firstColliders == null) return 0;
+                        Collection<Collider> secondColliders = second.getColliders();
+                        if (secondColliders == null) return 0;
+                        if (firstColliders.isEmpty() || secondColliders.isEmpty()) return 0;
+                        if (!first.getWorld().getUID().equals(second.getWorld().getUID())) return 0;
+                        boolean firstDestructSecond = first.getCollisionDeclaration().isDestruct(second);
+                        boolean secondDestructFirst = second.getCollisionDeclaration().isDestruct(first);
+                        if (firstDestructSecond || secondDestructFirst) {
+                            for (Collider collider : firstColliders) {
+                                if (collider == null) continue;
+                                for (Collider other : secondColliders) {
+                                    if (other == null) continue;
+                                    if (collider.intersects(other) || other.intersects(collider)) {
+                                        if (firstDestructSecond && second.onCollide(other, first, collider) == AbilityCollisionResult.DESTROY) {
+                                            this.destroy.tryEmitNext(second);
+                                        }
+                                        if (secondDestructFirst && first.onCollide(collider, second, other) == AbilityCollisionResult.DESTROY) {
+                                            this.destroy.tryEmitNext(first);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    // Ability Collision - End
+                    return 0;
+                })
+                .subscribe();
     }
 
     private Set<Ability> processActive(int parallelism) {
