@@ -35,7 +35,8 @@ import java.util.stream.Stream;
 public class AbilityInstanceService {
     private final Set<Ability> abilities = Collections.synchronizedSet(ConcurrentHashMap.newKeySet());
     private final AbilitySlotsConfig config;
-    private final Scheduler scheduler = Schedulers.newParallel("abilities", Runtime.getRuntime().availableProcessors() * 10, true);
+    private final Scheduler schedulerA = Schedulers.newParallel("abilities", Runtime.getRuntime().availableProcessors(), true);
+    private final Scheduler schedulerC = Schedulers.newParallel("collisions", Runtime.getRuntime().availableProcessors(), true);
 
     public void register(Ability ability) {
         this.abilities.add(ability);
@@ -45,7 +46,7 @@ public class AbilityInstanceService {
     private synchronized void process() {
         LagPreventConfig lagPrevent = this.config.getGlobal().getLagPrevent();
         List<Ability> block = Flux.fromIterable(this.abilities)
-                .subscribeOn(Schedulers.boundedElastic())
+                .subscribeOn(schedulerC)
                 .zipWith(Mono.just(new AtomicReference<>(AbilityTickStatus.CONTINUE)))
                 .sort((t1, t2) -> { // Обработка столкновений
                     Ability o1 = t1.getT1();
@@ -78,17 +79,19 @@ public class AbilityInstanceService {
                     }
                     return 0;
                 })
+                .parallel(Runtime.getRuntime().availableProcessors())
+                .runOn(this.schedulerC, 16)
                 .flatMap(objects -> { // Обработка тика
                             Ability t1 = objects.getT1();
                             return Mono.just(t1)
-                                    .publishOn(scheduler)
+                                    .publishOn(this.schedulerA)
                                     .map(ability -> {
                                         if (objects.getT2().get() == AbilityTickStatus.DESTROY) {
                                             return AbilityTickStatus.DESTROY;
                                         }
                                         return ability.tick();
                                     })
-                                    .timeout(Duration.of(lagPrevent.getLagThreshold(), ChronoUnit.MILLIS), scheduler)
+                                    .timeout(Duration.of(lagPrevent.getLagThreshold(), ChronoUnit.MILLIS), this.schedulerA)
                                     .onErrorReturn(throwable -> {
                                         IAbilityDeclaration<? extends Ability> declaration = t1.getDeclaration();
                                         String name = declaration.getName();
@@ -113,6 +116,7 @@ public class AbilityInstanceService {
                 )
                 .filter(objects -> objects.getT2().get() == AbilityTickStatus.DESTROY)
                 .map(Tuple2::getT1)
+                .sequential(16)
                 .collectList()
                 .block(Duration.of(lagPrevent.getDropAllThreshold(), ChronoUnit.MILLIS));
         if(block != null) {
