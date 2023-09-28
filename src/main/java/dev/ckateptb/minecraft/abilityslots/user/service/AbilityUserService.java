@@ -21,6 +21,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -75,6 +76,11 @@ public class AbilityUserService implements Listener {
                 this.users.remove(living.getUniqueId());
             }
         }
+    }
+
+    @EventHandler(priority = EventPriority.NORMAL)
+    private void on(PlayerQuitEvent event) {
+        this.users.remove(event.getPlayer().getUniqueId());
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
