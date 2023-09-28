@@ -15,6 +15,10 @@ public class LivingEntityAbilityTarget extends EntityAbilityTarget implements Li
     @Delegate
     protected final LivingEntityAdapter handle_;
 
+    public LivingEntityAdapter getAdapter() {
+        return handle_;
+    }
+
     protected LivingEntityAbilityTarget(LivingEntity livingEntity) {
         super(livingEntity);
         this.handle_ = AdapterUtils.adapt(livingEntity);

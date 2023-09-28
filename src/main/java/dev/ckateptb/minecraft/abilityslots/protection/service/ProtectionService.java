@@ -10,9 +10,7 @@ import dev.ckateptb.minecraft.abilityslots.protection.griefprevention.GriefPreve
 import dev.ckateptb.minecraft.abilityslots.protection.lwc.LWCProtection;
 import dev.ckateptb.minecraft.abilityslots.protection.towny.TownyProtection;
 import dev.ckateptb.minecraft.abilityslots.protection.worldguard.WorldGuardProtection;
-import dev.ckateptb.minecraft.atom.adapter.entity.LivingEntityAdapter;
 import lombok.Getter;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -56,18 +54,12 @@ public class ProtectionService implements Listener, Iterable<Protection> {
         }
     }
 
-    public boolean canUse(LivingEntityAbilityTarget user, Location location) {
-        LivingEntity entity = this.unwrapEntity(user);
+    public synchronized boolean canUse(LivingEntityAbilityTarget user, Location location) {
+        LivingEntity entity = user.getAdapter().getHandle_();
         UUID uuid = user.getUniqueId();
         return this.cache.computeIfAbsent(uuid, key ->
                 Caffeine.newBuilder().expireAfterAccess(Duration.ofMillis(this.config.getGlobal().getProtection().getCacheDuration())).build()
         ).get(new BlockPos(location), loc -> this.stream().allMatch(protection -> protection.canUse(entity, location)));
-    }
-
-    @SneakyThrows
-    private LivingEntity unwrapEntity(LivingEntityAbilityTarget user) {
-        LivingEntityAdapter adapter = (LivingEntityAdapter) user.getClass().getMethod("getHandle_").invoke(user);
-        return (LivingEntity) adapter.getClass().getMethod("getHandle_").invoke(adapter);
     }
 
     @EventHandler
