@@ -8,6 +8,8 @@ import dev.ckateptb.minecraft.abilityslots.ability.collision.declaration.ICollis
 import dev.ckateptb.minecraft.abilityslots.ability.collision.enums.AbilityCollisionResult;
 import dev.ckateptb.minecraft.abilityslots.ability.declaration.IAbilityDeclaration;
 import dev.ckateptb.minecraft.abilityslots.ability.enums.AbilityTickStatus;
+import dev.ckateptb.minecraft.abilityslots.ability.service.config.LagPreventConfig;
+import dev.ckateptb.minecraft.abilityslots.config.AbilitySlotsConfig;
 import dev.ckateptb.minecraft.abilityslots.user.AbilityUser;
 import dev.ckateptb.minecraft.atom.chain.AtomChain;
 import dev.ckateptb.minecraft.colliders.Collider;
@@ -32,6 +34,7 @@ import java.util.stream.Stream;
 @RequiredArgsConstructor
 public class AbilityInstanceService {
     private final Set<Ability> abilities = new HashSet<>();
+    private final AbilitySlotsConfig config;
 
     public void register(Ability ability) {
         this.abilities.add(ability);
@@ -46,6 +49,7 @@ public class AbilityInstanceService {
     }
 
     private Set<Ability> processActive(int parallelism) {
+        LagPreventConfig lagPrevent = this.config.getGlobal().getLagPrevent();
         Set<Ability> destroyed = new HashSet<>();
         Flux.fromIterable(this.abilities)
                 .parallel(parallelism)
@@ -86,14 +90,16 @@ public class AbilityInstanceService {
                             // Ability Collision - End
                             return current.tick();
                         })
-                        .timeout(Duration.of(50, ChronoUnit.MILLIS), Schedulers.parallel()) // TODO Вынести время, когда способность считается зависшей в конфиг
+                        .timeout(Duration.of(lagPrevent.getLagThreshold(), ChronoUnit.MILLIS), Schedulers.parallel())
                         .onErrorReturn(throwable -> {
                             IAbilityDeclaration<? extends Ability> declaration = ability.getDeclaration();
                             String name = declaration.getName();
                             String author = declaration.getAuthor();
-                            if (throwable instanceof TimeoutException) { // TODO вынести этот варн в конфиг
-                                log.warn("{} ability processing timed out and was destroyed to prevent lags." +
-                                        " Contact the author {}.", name, author);
+                            if (throwable instanceof TimeoutException) {
+                                if(lagPrevent.isAlertDestroyed()) {
+                                    log.warn("{} ability processing timed out and was destroyed to prevent lags." +
+                                            " Contact the author {}.", name, author);
+                                }
                             } else {
                                 log.error("There was an error processing ability {} and has been called back." +
                                         " Contact the author {}.", name, author);
