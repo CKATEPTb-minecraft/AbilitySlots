@@ -30,7 +30,7 @@ public class AbilitySequenceService implements Listener {
         this.sequences.put(declaration, actions);
     }
 
-    public Optional<IAbilityDeclaration<? extends Ability>> findSequence(List<AbilityAction> actions) {
+    public synchronized Optional<IAbilityDeclaration<? extends Ability>> findSequence(List<AbilityAction> actions) {
         return this.sequences.entrySet().stream()
                 .filter(entry -> {
                     List<AbilityAction> tail = entry.getValue();
