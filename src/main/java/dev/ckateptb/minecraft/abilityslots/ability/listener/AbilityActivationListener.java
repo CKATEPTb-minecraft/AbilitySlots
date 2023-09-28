@@ -2,6 +2,8 @@ package dev.ckateptb.minecraft.abilityslots.ability.listener;
 
 import dev.ckateptb.common.tableclothcontainer.annotation.Component;
 import dev.ckateptb.minecraft.abilityslots.ability.Ability;
+import dev.ckateptb.minecraft.abilityslots.ability.collision.CollidableAbility;
+import dev.ckateptb.minecraft.abilityslots.ability.collision.declaration.service.CollisionDeclarationService;
 import dev.ckateptb.minecraft.abilityslots.ability.declaration.IAbilityDeclaration;
 import dev.ckateptb.minecraft.abilityslots.ability.enums.AbilityActivateStatus;
 import dev.ckateptb.minecraft.abilityslots.ability.enums.ActivationMethod;
@@ -9,7 +11,6 @@ import dev.ckateptb.minecraft.abilityslots.ability.sequence.annotation.AbilityAc
 import dev.ckateptb.minecraft.abilityslots.ability.sequence.service.AbilitySequenceService;
 import dev.ckateptb.minecraft.abilityslots.ability.service.AbilityInstanceService;
 import dev.ckateptb.minecraft.abilityslots.ray.Ray;
-import dev.ckateptb.minecraft.abilityslots.user.AbilityUser;
 import dev.ckateptb.minecraft.abilityslots.user.PlayerAbilityUser;
 import dev.ckateptb.minecraft.abilityslots.user.service.AbilityUserService;
 import io.papermc.paper.event.player.PlayerArmSwingEvent;
@@ -36,13 +37,15 @@ public class AbilityActivationListener implements Listener {
     private final AbilityUserService userService;
     private final AbilitySequenceService sequenceService;
     private final AbilityInstanceService instanceService;
+    private final CollisionDeclarationService collisionDeclarationService;
 
+    @SuppressWarnings("unchecked")
     private void activate(PlayerAbilityUser user, ActivationMethod activation) {
         IAbilityDeclaration<? extends Ability> declaration = user.getSelectedAbility();
         if (declaration == null || !user.canUse(declaration)) return;
         AbilityAction action = this.sequenceService.createAction(declaration.getAbilityClass(), activation);
         List<AbilityAction> actions = user.registerAction(action);
-        if (actions.size() > sequenceService.getMaxActionsSize()) actions.remove(0);
+        if (actions.size() > this.sequenceService.getMaxActionsSize()) actions.remove(0);
         AtomicReference<ActivationMethod> atomicActivation = new AtomicReference<>(ActivationMethod.SEQUENCE);
         this.sequenceService.findSequence(actions) // Выполнил ли пользователь условия для какого-то Sequence
                 .filter(user::canUse) // Может ли пользователь использовать Sequence
@@ -55,8 +58,13 @@ public class AbilityActivationListener implements Listener {
                 .ifPresent(ability -> {
                     ability.setUser(user);
                     ability.setWorld(user.getWorld());
+                    if (ability instanceof CollidableAbility collidableAbility) {
+                        this.collisionDeclarationService
+                                .findDeclaration((IAbilityDeclaration<? extends CollidableAbility>) declaration)
+                                .ifPresent(collidableAbility::setCollisionDeclaration);
+                    }
                     if (ability.activate(atomicActivation.get()) == AbilityActivateStatus.ACTIVATE) {
-                        instanceService.register(ability);
+                        this.instanceService.register(ability);
                     }
                 });
     }
