@@ -90,8 +90,14 @@ public class PlayerAbilityUser extends PlayerAbilityTarget implements AbilityUse
         }
     }
 
+    @Override
     public Stream<Ability> getAbilityInstances() {
         return this.service.getAbilityInstanceService().instances(this);
+    }
+
+    @Override
+    public <T extends Ability> Stream<T> getAbilityInstances(Class<T> type) {
+        return this.getAbilityInstances().filter(ability -> ability.getClass().equals(type)).map(ability -> (T) ability);
     }
 
     public synchronized List<AbilityAction> registerAction(AbilityAction action) {
@@ -109,10 +115,12 @@ public class PlayerAbilityUser extends PlayerAbilityTarget implements AbilityUse
                 .build().matches(this, ability);
     }
 
+    @Override
     public boolean canUse(AbilityCategory category) {
         return new CategoryConditional.Builder().hasPermission().isEnabled().build().matches(this, category);
     }
 
+    @Override
     public boolean canUse(Location location) {
         return this.service.getProtectionService().canUse(this, location);
     }
