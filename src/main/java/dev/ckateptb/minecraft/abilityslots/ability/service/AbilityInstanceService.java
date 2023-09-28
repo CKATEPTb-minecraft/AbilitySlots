@@ -4,7 +4,6 @@ import com.google.common.collect.Sets;
 import dev.ckateptb.common.tableclothcontainer.annotation.Component;
 import dev.ckateptb.minecraft.abilityslots.ability.Ability;
 import dev.ckateptb.minecraft.abilityslots.ability.collision.CollidableAbility;
-import dev.ckateptb.minecraft.abilityslots.ability.collision.declaration.ICollisionDeclaration;
 import dev.ckateptb.minecraft.abilityslots.ability.collision.enums.AbilityCollisionResult;
 import dev.ckateptb.minecraft.abilityslots.ability.declaration.IAbilityDeclaration;
 import dev.ckateptb.minecraft.abilityslots.ability.enums.AbilityTickStatus;
@@ -22,10 +21,7 @@ import reactor.core.scheduler.Schedulers;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
 
@@ -50,55 +46,55 @@ public class AbilityInstanceService {
 
     private Set<Ability> processActive(int parallelism) {
         LagPreventConfig lagPrevent = this.config.getGlobal().getLagPrevent();
-        Set<Ability> destroyed = new HashSet<>();
+        Set<Ability> destroyed = Collections.synchronizedSet(new HashSet<>());
         Flux.fromIterable(this.abilities)
                 .parallel(parallelism)
                 .runOn(Schedulers.boundedElastic())
-                .flatMap(ability -> Mono.just(ability)
-                        .publishOn(Schedulers.parallel())
-                        .map(current -> {
-                            // Ability Collision - Start
-                            if (current instanceof CollidableAbility collidableAbility) {
-                                Collection<Collider> colliders = collidableAbility.getColliders();
-                                if (!colliders.isEmpty()) {
-                                    ICollisionDeclaration declaration = collidableAbility.getCollisionDeclaration();
-                                    Collection<Class<? extends CollidableAbility>> destructible = declaration.getDestructible();
-                                    for (Class<? extends CollidableAbility> otherClass : destructible) {
-                                        for (CollidableAbility other : this.instances(otherClass)
-                                                .map(other -> (CollidableAbility) other)
-                                                .filter(other -> !other.getColliders().isEmpty())
-                                                .toList()) {
-                                            boolean otherDestructCurrent = other.getCollisionDeclaration().isDestruct(collidableAbility);
-                                            for (Collider otherCollider : other.getColliders()) {
-                                                if(otherCollider == null) continue;
-                                                for (Collider collider : colliders) {
-                                                    if(collider == null) continue;
-                                                    if (collider.intersects(otherCollider)) {
-                                                        if (other.onCollide(otherCollider, collidableAbility, collider) == AbilityCollisionResult.DESTROY) {
-                                                            destroyed.add(ability);
-                                                        }
-                                                        if (otherDestructCurrent) {
-                                                            if (collidableAbility.onCollide(collider, other, otherCollider) == AbilityCollisionResult.DESTROY) {
-                                                                return AbilityTickStatus.DESTROY;
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
+                .sorted((o1, o2) -> {
+                    // Ability Collision - Start
+                    if (o1 instanceof CollidableAbility first && o2 instanceof CollidableAbility second) {
+                        Collection<Collider> firstColliders = first.getColliders();
+                        if (firstColliders == null) return 0;
+                        Collection<Collider> secondColliders = second.getColliders();
+                        if (secondColliders == null) return 0;
+                        if (firstColliders.isEmpty() || secondColliders.isEmpty()) return 0;
+                        if (!first.getWorld().getUID().equals(second.getWorld().getUID())) return 0;
+                        boolean firstDestructSecond = first.getCollisionDeclaration().isDestruct(second);
+                        boolean secondDestructFirst = second.getCollisionDeclaration().isDestruct(first);
+                        if (firstDestructSecond || secondDestructFirst) {
+                            for (Collider collider : firstColliders) {
+                                if (collider == null) continue;
+                                for (Collider other : secondColliders) {
+                                    if (other == null) continue;
+                                    ;
+                                    if (collider.intersects(other) || other.intersects(collider)) {
+                                        if (firstDestructSecond && second.onCollide(other, first, collider) == AbilityCollisionResult.DESTROY) {
+                                            destroyed.add(second);
+                                        }
+                                        if (secondDestructFirst && first.onCollide(collider, second, other) == AbilityCollisionResult.DESTROY) {
+                                            destroyed.add(first);
                                         }
                                     }
                                 }
                             }
-                            // Ability Collision - End
-                            return current.tick();
-                        })
+                        }
+                    }
+                    // Ability Collision - End
+                    return 0;
+                })
+                .parallel(parallelism)
+                .runOn(Schedulers.boundedElastic())
+                .flatMap(ability -> Mono.just(ability)
+                        .publishOn(Schedulers.parallel())
+                        .filter(value -> !destroyed.contains(value))
+                        .map(Ability::tick)
                         .timeout(Duration.of(lagPrevent.getLagThreshold(), ChronoUnit.MILLIS), Schedulers.parallel())
                         .onErrorReturn(throwable -> {
                             IAbilityDeclaration<? extends Ability> declaration = ability.getDeclaration();
                             String name = declaration.getName();
                             String author = declaration.getAuthor();
                             if (throwable instanceof TimeoutException) {
-                                if(lagPrevent.isAlertDestroyed()) {
+                                if (lagPrevent.isAlertDestroyed()) {
                                     log.warn("{} ability processing timed out and was destroyed to prevent lags." +
                                             " Contact the author {}.", name, author);
                                 }
