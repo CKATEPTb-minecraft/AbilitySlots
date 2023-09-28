@@ -105,6 +105,7 @@ public class PlayerAbilityUser extends PlayerAbilityTarget implements AbilityUse
                 .hasPermission()
                 .hasCategory()
                 .isEnabled()
+                .withoutCooldown()
                 .build().matches(this, ability);
     }
 
