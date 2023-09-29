@@ -30,6 +30,7 @@ We use [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html) to manag
 - [X] Temporary block system
 - [X] Respect protection plugins
 - [ ] Ability combinations (implemented but untested yet)
+- [ ] Passive abilities (next)
 - [X] Database support
 - [X] PAPI Integration
 - [X] Addon's loader
