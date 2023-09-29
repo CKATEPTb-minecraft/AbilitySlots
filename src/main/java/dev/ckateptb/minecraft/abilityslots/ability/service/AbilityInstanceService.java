@@ -7,17 +7,14 @@ import dev.ckateptb.minecraft.abilityslots.ability.enums.AbilityTickStatus;
 import dev.ckateptb.minecraft.abilityslots.ability.service.config.LagPreventConfig;
 import dev.ckateptb.minecraft.abilityslots.config.AbilitySlotsConfig;
 import dev.ckateptb.minecraft.abilityslots.user.AbilityUser;
-import dev.ckateptb.minecraft.atom.chain.AtomChain;
 import dev.ckateptb.minecraft.nicotine.annotation.Schedule;
 import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.helpers.MessageFormatter;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.core.publisher.Sinks;
 import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
-import reactor.util.function.Tuple2;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
@@ -32,35 +29,39 @@ import java.util.stream.Stream;
 @CustomLog
 @RequiredArgsConstructor
 public class AbilityInstanceService {
+    private final Scheduler abilityScheduler = Schedulers.newSingle("abilities", true);
+    private final Scheduler timeoutScheduler = Schedulers.newSingle("timeout", true);
     private final Set<Ability> abilities = Collections.synchronizedSet(ConcurrentHashMap.newKeySet());
     private final AbilitySlotsConfig config;
-    private final Scheduler scheduler = Schedulers.newSingle("abilities");
     private boolean locked;
+
     public void register(Ability ability) {
         this.abilities.add(ability);
     }
 
-    @Schedule(initialDelay = 0, fixedRate = 1)
+    @Schedule(initialDelay = 0, fixedRate = 1, async = true)
     private synchronized void process() {
-        if (this.locked || this.abilities.isEmpty()) return;
+        if (this.abilities.isEmpty()) return;
         try {
             this.tickAbilities();
-        } catch (Exception exception) {
+        } catch (Throwable throwable) {
             this.abilities.forEach(this::destroy);
             this.abilities.clear();
-            log.error("An error occurred while processing abilities and all abilities was force destroyed.", exception);
+            if (throwable.getMessage().contains("Timeout on blocking read")) {
+                log.warn("Abilities processing timed out all abilities was destroyed to prevent lags.");
+            } else {
+                log.error("An error occurred while processing abilities and all abilities was force destroyed.", throwable);
+            }
         }
     }
 
     public void tickAbilities() {
-        this.locked = true;
         LagPreventConfig lagPrevent = this.config.getGlobal().getLagPrevent();
         Flux.fromIterable(this.abilities)
-                .subscribeOn(Schedulers.boundedElastic())
                 .flatMap(ability -> Mono.just(ability)
-                        .publishOn(this.scheduler)
+                        .publishOn(this.abilityScheduler)
                         .map(Ability::tick)
-                        .timeout(Duration.of(lagPrevent.getLagThreshold(), ChronoUnit.MILLIS), this.scheduler)
+                        .timeout(Duration.of(lagPrevent.getLagThreshold(), ChronoUnit.MILLIS), this.timeoutScheduler)
                         .onErrorReturn(throwable -> {
                             IAbilityDeclaration<? extends Ability> declaration = ability.getDeclaration();
                             String name = declaration.getName();
@@ -79,24 +80,15 @@ public class AbilityInstanceService {
                             }
                             return true;
                         }, AbilityTickStatus.DESTROY)
-                        .zipWith(Mono.just(ability))
+                        .filter(status -> status == AbilityTickStatus.DESTROY)
+                        .map(status -> ability)
+                        .doOnNext(this::destroy)
                 )
-                .filter(tuple2 -> tuple2.getT1() == AbilityTickStatus.DESTROY)
-                .map(Tuple2::getT2)
-                .doOnNext(this::destroy)
-                .doOnComplete(() -> this.locked = false)
-                .subscribe();
+                .then()
+                .block(Duration.of(lagPrevent.getDropAllThreshold(), ChronoUnit.MILLIS));
     }
 
-    public void destroy(Ability ability) {
-        AtomChain.sync(ability).promise(destroyed -> {
-            if (this.abilities.contains(ability)) {
-                this.processDestroy(destroyed);
-            }
-        });
-    }
-
-    private void processDestroy(Ability... destroyed) {
+    public void destroy(Ability... destroyed) {
         for (Ability ability : destroyed) {
             if (this.abilities.remove(ability)) {
                 try {
@@ -105,8 +97,8 @@ public class AbilityInstanceService {
                     IAbilityDeclaration<? extends Ability> declaration = ability.getDeclaration();
                     log.error(MessageFormatter.arrayFormat(
                             "There was an error on ability {} was destroyed. Contact the author {}.",
-                                    new Object[]{declaration.getName(), declaration.getAuthor()}
-                            ).getMessage(), exception);
+                            new Object[]{declaration.getName(), declaration.getAuthor()}
+                    ).getMessage(), exception);
                 }
             }
         }
