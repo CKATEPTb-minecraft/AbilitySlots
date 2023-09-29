@@ -59,10 +59,7 @@ dependencies {
     compileOnly("dev.ckateptb.minecraft:AbilitySlots:+")
     compileOnly("dev.ckateptb.minecraft:Nicotine:+")
     compileOnly("dev.ckateptb.minecraft:Atom:+")
-    compileOnly("dev.ckateptb.minecraft:Varflex:+")
     compileOnly("dev.ckateptb.minecraft:Colliders:+")
-    compileOnly("dev.ckateptb.minecraft:Caffeine:+")
-    compileOnly("dev.ckateptb.minecraft:Supervisor:+")
 }
 ```
 * To create abilities you must use a category, so.. Create ability category
