@@ -1,34 +1,31 @@
 package dev.ckateptb.minecraft.abilityslots.ability.service;
 
-import com.google.common.collect.Sets;
 import dev.ckateptb.common.tableclothcontainer.annotation.Component;
 import dev.ckateptb.minecraft.abilityslots.ability.Ability;
-import dev.ckateptb.minecraft.abilityslots.ability.collision.CollidableAbility;
-import dev.ckateptb.minecraft.abilityslots.ability.collision.enums.AbilityCollisionResult;
 import dev.ckateptb.minecraft.abilityslots.ability.declaration.IAbilityDeclaration;
 import dev.ckateptb.minecraft.abilityslots.ability.enums.AbilityTickStatus;
 import dev.ckateptb.minecraft.abilityslots.ability.service.config.LagPreventConfig;
 import dev.ckateptb.minecraft.abilityslots.config.AbilitySlotsConfig;
 import dev.ckateptb.minecraft.abilityslots.user.AbilityUser;
 import dev.ckateptb.minecraft.atom.chain.AtomChain;
-import dev.ckateptb.minecraft.colliders.Collider;
 import dev.ckateptb.minecraft.nicotine.annotation.Schedule;
 import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.helpers.MessageFormatter;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.Sinks;
 import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 import reactor.util.function.Tuple2;
-import reactor.util.function.Tuples;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.util.Collections;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Component
@@ -37,231 +34,82 @@ import java.util.stream.Stream;
 public class AbilityInstanceService {
     private final Set<Ability> abilities = Collections.synchronizedSet(ConcurrentHashMap.newKeySet());
     private final AbilitySlotsConfig config;
-    private final Scheduler schedulerA = Schedulers.newParallel("abilities", Runtime.getRuntime().availableProcessors(), true);
-    private final Scheduler schedulerC = Schedulers.newParallel("collisions", Runtime.getRuntime().availableProcessors(), true);
-
+    private final Scheduler scheduler = Schedulers.newSingle("abilities");
+    private boolean locked;
     public void register(Ability ability) {
         this.abilities.add(ability);
     }
 
-    @Schedule(initialDelay = 0, fixedRate = 1, async = true)
+    @Schedule(initialDelay = 0, fixedRate = 1)
     private synchronized void process() {
-        List<Ability> collect = this.abilities.stream()
-                .parallel()
-                .map(ability -> Tuples.of(ability, new AtomicReference<>(AbilityTickStatus.CONTINUE)))
-                .sorted((t1, t2) -> { // Обработка столкновений
-                    Ability o1 = t1.getT1();
-                    Ability o2 = t2.getT1();
-                    if (o1 instanceof CollidableAbility first && o2 instanceof CollidableAbility second) {
-                        Collection<Collider> firstColliders = first.getColliders();
-                        Collection<Collider> secondColliders = second.getColliders();
-                        if (firstColliders == null || secondColliders == null ||
-                                firstColliders.isEmpty() || secondColliders.isEmpty() ||
-                                !first.getWorld().getUID().equals(second.getWorld().getUID()) ||
-                                first.getUser().getUniqueId().equals(second.getUser().getUniqueId())) return 0;
-                        boolean firstDestructSecond = first.getCollisionDeclaration().isDestruct(second);
-                        boolean secondDestructFirst = second.getCollisionDeclaration().isDestruct(first);
-                        if (firstDestructSecond || secondDestructFirst) {
-                            for (Collider collider : firstColliders) {
-                                if (collider == null) continue;
-                                for (Collider other : secondColliders) {
-                                    if (other == null) continue;
-                                    if (collider.intersects(other) || other.intersects(collider)) {
-                                        if (firstDestructSecond && second.onCollide(other, first, collider) == AbilityCollisionResult.DESTROY) {
-                                            t2.getT2().set(AbilityTickStatus.DESTROY);
-                                        }
-                                        if (secondDestructFirst && first.onCollide(collider, second, other) == AbilityCollisionResult.DESTROY) {
-                                            t1.getT2().set(AbilityTickStatus.DESTROY);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    return 0;
-                })
-                .peek(objects -> {
-                    Ability ability = objects.getT1();
-                    AbilityTickStatus status = objects.getT2().get();
-                    if (status != AbilityTickStatus.DESTROY) {
-                        try {
-                            objects.getT2().set(ability.tick());
-                        } catch (Exception e) {
-                            objects.getT2().set(AbilityTickStatus.DESTROY);
-                        }
-                    }
-                })
-                .filter(objects -> objects.getT2().get() == AbilityTickStatus.DESTROY)
-                .map(Tuple2::getT1)
-                .toList();
-        collect.forEach(this.abilities::remove);
-    }
-
-    private synchronized void oldprocess() {
-        LagPreventConfig lagPrevent = this.config.getGlobal().getLagPrevent();
-        List<Ability> block = Flux.fromIterable(this.abilities)
-                .subscribeOn(schedulerC)
-                .zipWith(Mono.just(new AtomicReference<>(AbilityTickStatus.CONTINUE)))
-                .sort((t1, t2) -> { // Обработка столкновений
-                    Ability o1 = t1.getT1();
-                    Ability o2 = t2.getT1();
-                    if (o1 instanceof CollidableAbility first && o2 instanceof CollidableAbility second) {
-                        Collection<Collider> firstColliders = first.getColliders();
-                        Collection<Collider> secondColliders = second.getColliders();
-                        if (firstColliders == null || secondColliders == null ||
-                                firstColliders.isEmpty() || secondColliders.isEmpty() ||
-                                !first.getWorld().getUID().equals(second.getWorld().getUID()) ||
-                                first.getUser().getUniqueId().equals(second.getUser().getUniqueId())) return 0;
-                        boolean firstDestructSecond = first.getCollisionDeclaration().isDestruct(second);
-                        boolean secondDestructFirst = second.getCollisionDeclaration().isDestruct(first);
-                        if (firstDestructSecond || secondDestructFirst) {
-                            for (Collider collider : firstColliders) {
-                                if (collider == null) continue;
-                                for (Collider other : secondColliders) {
-                                    if (other == null) continue;
-                                    if (collider.intersects(other) || other.intersects(collider)) {
-                                        if (firstDestructSecond && second.onCollide(other, first, collider) == AbilityCollisionResult.DESTROY) {
-                                            t2.getT2().set(AbilityTickStatus.DESTROY);
-                                        }
-                                        if (secondDestructFirst && first.onCollide(collider, second, other) == AbilityCollisionResult.DESTROY) {
-                                            t1.getT2().set(AbilityTickStatus.DESTROY);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    return 0;
-                })
-                .parallel(Runtime.getRuntime().availableProcessors())
-                .runOn(this.schedulerC, 16)
-                .flatMap(objects -> { // Обработка тика
-                            Ability t1 = objects.getT1();
-                            return Mono.just(t1)
-                                    .publishOn(this.schedulerA)
-                                    .map(ability -> {
-                                        if (objects.getT2().get() == AbilityTickStatus.DESTROY) {
-                                            return AbilityTickStatus.DESTROY;
-                                        }
-                                        return ability.tick();
-                                    })
-                                    .timeout(Duration.of(lagPrevent.getLagThreshold(), ChronoUnit.MILLIS), this.schedulerA)
-                                    .onErrorReturn(throwable -> {
-                                        IAbilityDeclaration<? extends Ability> declaration = t1.getDeclaration();
-                                        String name = declaration.getName();
-                                        String author = declaration.getAuthor();
-                                        if (throwable instanceof TimeoutException) {
-                                            if (lagPrevent.isAlertDestroyed()) {
-                                                log.warn("{} ability processing timed out and was destroyed to prevent lags." +
-                                                        " Contact the author {}.", name, author);
-                                            }
-                                        } else {
-                                            log.error("There was an error processing ability {} and has been called back." +
-                                                    " Contact the author {}.", name, author);
-                                            log.error(throwable.getMessage(), throwable);
-                                        }
-                                        return true;
-                                    }, AbilityTickStatus.DESTROY)
-                                    .map(status -> {
-                                        objects.getT2().set(status);
-                                        return objects;
-                                    });
-                        }
-                )
-                .filter(objects -> objects.getT2().get() == AbilityTickStatus.DESTROY)
-                .map(Tuple2::getT1)
-                .sequential(16)
-                .collectList()
-                .block(Duration.of(lagPrevent.getDropAllThreshold(), ChronoUnit.MILLIS));
-        if (block != null) {
-            block.forEach(this.abilities::remove);
+        if (this.locked || this.abilities.isEmpty()) return;
+        try {
+            this.tickAbilities();
+        } catch (Exception exception) {
+            this.abilities.forEach(this::destroy);
+            this.abilities.clear();
+            log.error("An error occurred while processing abilities and all abilities was force destroyed.", exception);
         }
     }
 
-    private void processActive() {
+    public void tickAbilities() {
+        this.locked = true;
         LagPreventConfig lagPrevent = this.config.getGlobal().getLagPrevent();
         Flux.fromIterable(this.abilities)
                 .subscribeOn(Schedulers.boundedElastic())
-                .sort((o1, o2) -> {
-                    // Ability Collision - Start
-                    if (o1 instanceof CollidableAbility first && o2 instanceof CollidableAbility second) {
-                        Collection<Collider> firstColliders = first.getColliders();
-                        if (firstColliders == null) return 0;
-                        Collection<Collider> secondColliders = second.getColliders();
-                        if (secondColliders == null) return 0;
-                        if (firstColliders.isEmpty() || secondColliders.isEmpty()) return 0;
-                        if (!first.getWorld().getUID().equals(second.getWorld().getUID())) return 0;
-                        boolean firstDestructSecond = first.getCollisionDeclaration().isDestruct(second);
-                        boolean secondDestructFirst = second.getCollisionDeclaration().isDestruct(first);
-                        if (firstDestructSecond || secondDestructFirst) {
-                            for (Collider collider : firstColliders) {
-                                if (collider == null) continue;
-                                for (Collider other : secondColliders) {
-                                    if (other == null) continue;
-                                    if (collider.intersects(other) || other.intersects(collider)) {
-                                        if (firstDestructSecond && second.onCollide(other, first, collider) == AbilityCollisionResult.DESTROY) {
-                                            this.destroy(second);
-                                        }
-                                        if (secondDestructFirst && first.onCollide(collider, second, other) == AbilityCollisionResult.DESTROY) {
-                                            this.destroy(first);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    // Ability Collision - End
-                    return 0;
-                })
                 .flatMap(ability -> Mono.just(ability)
+                        .publishOn(this.scheduler)
                         .map(Ability::tick)
-                        .timeout(Duration.of(lagPrevent.getLagThreshold(), ChronoUnit.MILLIS))
+                        .timeout(Duration.of(lagPrevent.getLagThreshold(), ChronoUnit.MILLIS), this.scheduler)
                         .onErrorReturn(throwable -> {
                             IAbilityDeclaration<? extends Ability> declaration = ability.getDeclaration();
                             String name = declaration.getName();
                             String author = declaration.getAuthor();
                             if (throwable instanceof TimeoutException) {
                                 if (lagPrevent.isAlertDestroyed()) {
-                                    log.warn("{} ability processing timed out and was destroyed to prevent lags." +
-                                            " Contact the author {}.", name, author);
+                                    log.warn("{} ability processing timed out and was destroyed to" +
+                                            " prevent lags. Contact the author {}.", name, author);
                                 }
                             } else {
-                                log.error("There was an error processing ability {} and has been called back." +
-                                        " Contact the author {}.", name, author);
-                                log.error(throwable.getMessage(), throwable);
+                                log.error(MessageFormatter.arrayFormat(
+                                        "There was an error processing ability {} and has" +
+                                                " been called back. Contact the author {}.",
+                                        new Object[]{declaration.getName(), declaration.getAuthor()}
+                                ).getMessage(), throwable);
                             }
                             return true;
                         }, AbilityTickStatus.DESTROY)
-                        .doOnNext(status -> {
-                            if (status == AbilityTickStatus.DESTROY) {
-                                this.destroy(ability);
-                            }
-                        })
+                        .zipWith(Mono.just(ability))
                 )
-                .then()
-                .block(Duration.of(lagPrevent.getDropAllThreshold(), ChronoUnit.MILLIS));
+                .filter(tuple2 -> tuple2.getT1() == AbilityTickStatus.DESTROY)
+                .map(Tuple2::getT2)
+                .doOnNext(this::destroy)
+                .doOnComplete(() -> this.locked = false)
+                .subscribe();
     }
 
     public void destroy(Ability ability) {
         AtomChain.sync(ability).promise(destroyed -> {
             if (this.abilities.contains(ability)) {
-                this.processDestroy(Sets.newHashSet(destroyed));
+                this.processDestroy(destroyed);
             }
         });
     }
 
-    private void processDestroy(Set<Ability> destroyed) {
-        int size = destroyed.size();
-        if (size == 0) return;
-        destroyed.removeIf(ability -> !this.abilities.contains(ability));
-        this.abilities.removeAll(destroyed);
-        Flux.fromIterable(destroyed)
-                .parallel(size)
-                .runOn(Schedulers.boundedElastic())
-                .flatMap(ability -> Mono.just(ability)
-                        .publishOn(Schedulers.parallel())
-                        .doOnNext(value -> value.destroy(null))
-                ).subscribe();
+    private void processDestroy(Ability... destroyed) {
+        for (Ability ability : destroyed) {
+            if (this.abilities.remove(ability)) {
+                try {
+                    ability.destroy(null);
+                } catch (Throwable exception) {
+                    IAbilityDeclaration<? extends Ability> declaration = ability.getDeclaration();
+                    log.error(MessageFormatter.arrayFormat(
+                            "There was an error on ability {} was destroyed. Contact the author {}.",
+                                    new Object[]{declaration.getName(), declaration.getAuthor()}
+                            ).getMessage(), exception);
+                }
+            }
+        }
     }
 
     public synchronized Stream<Ability> instances(AbilityUser user) {
