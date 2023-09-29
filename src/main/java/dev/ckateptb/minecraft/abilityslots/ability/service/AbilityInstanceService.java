@@ -42,8 +42,41 @@ public class AbilityInstanceService {
     @Schedule(initialDelay = 0, fixedRate = 1, async = true)
     private synchronized void process() {
         if (this.abilities.isEmpty()) return;
+        this.tickAbilities();
+    }
+
+    private void tickAbilities() {
+        LagPreventConfig lagPrevent = this.config.getGlobal().getLagPrevent();
         try {
-            this.tickAbilities();
+            Flux.fromIterable(this.abilities)
+                    .flatMap(ability -> Mono.just(ability)
+                            .publishOn(this.abilityScheduler)
+                            .map(Ability::tick)
+                            .timeout(Duration.of(lagPrevent.getLagThreshold(), ChronoUnit.MILLIS), this.timeoutScheduler)
+                            .onErrorReturn(throwable -> {
+                                IAbilityDeclaration<? extends Ability> declaration = ability.getDeclaration();
+                                String name = declaration.getName();
+                                String author = declaration.getAuthor();
+                                if (throwable instanceof TimeoutException) {
+                                    if (lagPrevent.isAlertDestroyed()) {
+                                        log.warn("{} ability processing timed out and was destroyed to" +
+                                                " prevent lags. Contact the author {}.", name, author);
+                                    }
+                                } else {
+                                    log.error(MessageFormatter.arrayFormat(
+                                            "There was an error processing ability {} and has" +
+                                                    " been called back. Contact the author {}.",
+                                            new Object[]{declaration.getName(), declaration.getAuthor()}
+                                    ).getMessage(), throwable);
+                                }
+                                return true;
+                            }, AbilityTickStatus.DESTROY)
+                            .filter(status -> status == AbilityTickStatus.DESTROY)
+                            .map(status -> ability)
+                            .doOnNext(this::destroy)
+                    )
+                    .then()
+                    .block(Duration.of(lagPrevent.getDropAllThreshold(), ChronoUnit.MILLIS));
         } catch (Throwable throwable) {
             this.abilities.forEach(this::destroy);
             this.abilities.clear();
@@ -53,39 +86,6 @@ public class AbilityInstanceService {
                 log.error("An error occurred while processing abilities and all abilities was force destroyed.", throwable);
             }
         }
-    }
-
-    public void tickAbilities() {
-        LagPreventConfig lagPrevent = this.config.getGlobal().getLagPrevent();
-        Flux.fromIterable(this.abilities)
-                .flatMap(ability -> Mono.just(ability)
-                        .publishOn(this.abilityScheduler)
-                        .map(Ability::tick)
-                        .timeout(Duration.of(lagPrevent.getLagThreshold(), ChronoUnit.MILLIS), this.timeoutScheduler)
-                        .onErrorReturn(throwable -> {
-                            IAbilityDeclaration<? extends Ability> declaration = ability.getDeclaration();
-                            String name = declaration.getName();
-                            String author = declaration.getAuthor();
-                            if (throwable instanceof TimeoutException) {
-                                if (lagPrevent.isAlertDestroyed()) {
-                                    log.warn("{} ability processing timed out and was destroyed to" +
-                                            " prevent lags. Contact the author {}.", name, author);
-                                }
-                            } else {
-                                log.error(MessageFormatter.arrayFormat(
-                                        "There was an error processing ability {} and has" +
-                                                " been called back. Contact the author {}.",
-                                        new Object[]{declaration.getName(), declaration.getAuthor()}
-                                ).getMessage(), throwable);
-                            }
-                            return true;
-                        }, AbilityTickStatus.DESTROY)
-                        .filter(status -> status == AbilityTickStatus.DESTROY)
-                        .map(status -> ability)
-                        .doOnNext(this::destroy)
-                )
-                .then()
-                .block(Duration.of(lagPrevent.getDropAllThreshold(), ChronoUnit.MILLIS));
     }
 
     public void destroy(Ability... destroyed) {
