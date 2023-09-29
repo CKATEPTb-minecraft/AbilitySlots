@@ -2,6 +2,7 @@ package dev.ckateptb.minecraft.abilityslots.ability.service;
 
 import dev.ckateptb.common.tableclothcontainer.annotation.Component;
 import dev.ckateptb.minecraft.abilityslots.ability.Ability;
+import dev.ckateptb.minecraft.abilityslots.ability.collision.service.AbilityCollisionService;
 import dev.ckateptb.minecraft.abilityslots.ability.declaration.IAbilityDeclaration;
 import dev.ckateptb.minecraft.abilityslots.ability.enums.AbilityTickStatus;
 import dev.ckateptb.minecraft.abilityslots.ability.service.config.LagPreventConfig;
@@ -32,8 +33,9 @@ public class AbilityInstanceService {
     private final Scheduler abilityScheduler = Schedulers.newSingle("abilities", true);
     private final Scheduler timeoutScheduler = Schedulers.newSingle("timeout", true);
     private final Set<Ability> abilities = Collections.synchronizedSet(ConcurrentHashMap.newKeySet());
+
     private final AbilitySlotsConfig config;
-    private boolean locked;
+    private final AbilityCollisionService collisionService;
 
     public void register(Ability ability) {
         this.abilities.add(ability);
@@ -43,6 +45,8 @@ public class AbilityInstanceService {
     private synchronized void process() {
         if (this.abilities.isEmpty()) return;
         this.tickAbilities();
+        this.collisionService.findCollided(this.abilities)
+                .subscribe(this::destroy);
     }
 
     private void tickAbilities() {

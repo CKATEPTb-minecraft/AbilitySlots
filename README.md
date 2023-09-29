@@ -22,7 +22,7 @@ We use [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html) to manag
 # Features
 
 - [X] Fully async
-- [ ] Colliders between abilities (next)
+- [X] Colliders between abilities
 - [X] Protection from poor developers
 - [X] Energy & Cooldowns
 - [X] Fully configurable

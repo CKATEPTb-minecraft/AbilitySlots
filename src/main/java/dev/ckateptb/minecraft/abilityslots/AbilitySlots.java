@@ -8,7 +8,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.slf4j.Logger;
 
-// TODO Написать readme и документацию
 // TODO Реализовать механику временных биндов (на примере WaterArms)
 
 public class AbilitySlots extends JavaPlugin {
