@@ -20,6 +20,7 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 import reactor.util.function.Tuple2;
+import reactor.util.function.Tuples;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
@@ -27,6 +28,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Component
@@ -44,6 +46,58 @@ public class AbilityInstanceService {
 
     @Schedule(initialDelay = 0, fixedRate = 1, async = true)
     private synchronized void process() {
+        List<Ability> collect = this.abilities.stream()
+                .parallel()
+                .map(ability -> Tuples.of(ability, new AtomicReference<>(AbilityTickStatus.CONTINUE)))
+                .sorted((t1, t2) -> { // Обработка столкновений
+                    Ability o1 = t1.getT1();
+                    Ability o2 = t2.getT1();
+                    if (o1 instanceof CollidableAbility first && o2 instanceof CollidableAbility second) {
+                        Collection<Collider> firstColliders = first.getColliders();
+                        Collection<Collider> secondColliders = second.getColliders();
+                        if (firstColliders == null || secondColliders == null ||
+                                firstColliders.isEmpty() || secondColliders.isEmpty() ||
+                                !first.getWorld().getUID().equals(second.getWorld().getUID()) ||
+                                first.getUser().getUniqueId().equals(second.getUser().getUniqueId())) return 0;
+                        boolean firstDestructSecond = first.getCollisionDeclaration().isDestruct(second);
+                        boolean secondDestructFirst = second.getCollisionDeclaration().isDestruct(first);
+                        if (firstDestructSecond || secondDestructFirst) {
+                            for (Collider collider : firstColliders) {
+                                if (collider == null) continue;
+                                for (Collider other : secondColliders) {
+                                    if (other == null) continue;
+                                    if (collider.intersects(other) || other.intersects(collider)) {
+                                        if (firstDestructSecond && second.onCollide(other, first, collider) == AbilityCollisionResult.DESTROY) {
+                                            t2.getT2().set(AbilityTickStatus.DESTROY);
+                                        }
+                                        if (secondDestructFirst && first.onCollide(collider, second, other) == AbilityCollisionResult.DESTROY) {
+                                            t1.getT2().set(AbilityTickStatus.DESTROY);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    return 0;
+                })
+                .peek(objects -> {
+                    Ability ability = objects.getT1();
+                    AbilityTickStatus status = objects.getT2().get();
+                    if (status != AbilityTickStatus.DESTROY) {
+                        try {
+                            objects.getT2().set(ability.tick());
+                        } catch (Exception e) {
+                            objects.getT2().set(AbilityTickStatus.DESTROY);
+                        }
+                    }
+                })
+                .filter(objects -> objects.getT2().get() == AbilityTickStatus.DESTROY)
+                .map(Tuple2::getT1)
+                .toList();
+        collect.forEach(this.abilities::remove);
+    }
+
+    private synchronized void oldprocess() {
         LagPreventConfig lagPrevent = this.config.getGlobal().getLagPrevent();
         List<Ability> block = Flux.fromIterable(this.abilities)
                 .subscribeOn(schedulerC)
@@ -119,7 +173,7 @@ public class AbilityInstanceService {
                 .sequential(16)
                 .collectList()
                 .block(Duration.of(lagPrevent.getDropAllThreshold(), ChronoUnit.MILLIS));
-        if(block != null) {
+        if (block != null) {
             block.forEach(this.abilities::remove);
         }
     }
