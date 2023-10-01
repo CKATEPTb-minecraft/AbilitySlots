@@ -45,7 +45,7 @@ public class AbilityParser implements ArgumentParser<CommandSender, IAbilityDecl
                 .filter(declaration -> declaration.getName().toLowerCase().startsWith(input.toLowerCase()))
                 .filter(category -> {
                     if (context.getSender() instanceof Player player) {
-                        return this.userService.getAbilityUser(player).canUse(category);
+                        return this.userService.getAbilityUser(player).canBind(category);
                     }
                     return true;
                 })
