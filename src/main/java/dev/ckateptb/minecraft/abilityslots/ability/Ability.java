@@ -19,6 +19,7 @@ import org.bukkit.World;
 public abstract class Ability {
     protected AbilityUser user;
     protected World world;
+    protected ActivationMethod activationMethod;
 
     /**
      * Вызов данного метода управляется {@link dev.ckateptb.minecraft.abilityslots.ability.service.AbilityInstanceService}

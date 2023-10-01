@@ -5,6 +5,7 @@ import dev.ckateptb.minecraft.abilityslots.ability.Ability;
 import dev.ckateptb.minecraft.abilityslots.ability.collision.CollidableAbility;
 import dev.ckateptb.minecraft.abilityslots.ability.collision.declaration.service.CollisionDeclarationService;
 import dev.ckateptb.minecraft.abilityslots.ability.declaration.IAbilityDeclaration;
+import dev.ckateptb.minecraft.abilityslots.ability.declaration.service.AbilityDeclarationService;
 import dev.ckateptb.minecraft.abilityslots.ability.enums.AbilityActivateStatus;
 import dev.ckateptb.minecraft.abilityslots.ability.enums.ActivationMethod;
 import dev.ckateptb.minecraft.abilityslots.ability.sequence.annotation.AbilityAction;
@@ -13,6 +14,7 @@ import dev.ckateptb.minecraft.abilityslots.ability.service.AbilityInstanceServic
 import dev.ckateptb.minecraft.abilityslots.ray.Ray;
 import dev.ckateptb.minecraft.abilityslots.user.PlayerAbilityUser;
 import dev.ckateptb.minecraft.abilityslots.user.service.AbilityUserService;
+import dev.ckateptb.minecraft.nicotine.annotation.Schedule;
 import io.papermc.paper.event.player.PlayerArmSwingEvent;
 import lombok.RequiredArgsConstructor;
 import org.bukkit.GameMode;
@@ -26,8 +28,11 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.inventory.EquipmentSlot;
+import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Schedulers;
+import reactor.util.function.Tuples;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -39,11 +44,15 @@ public class AbilityActivationListener implements Listener {
     private final AbilitySequenceService sequenceService;
     private final AbilityInstanceService instanceService;
     private final CollisionDeclarationService collisionDeclarationService;
+    private final AbilityDeclarationService abilityDeclarationService;
+
+    private void activate(PlayerAbilityUser user, ActivationMethod activation) {
+        this.activate(user, activation, user.getSelectedAbility());
+    }
 
     @SuppressWarnings("unchecked")
-    private void activate(PlayerAbilityUser user, ActivationMethod activation) {
+    private void activate(PlayerAbilityUser user, ActivationMethod activation, IAbilityDeclaration<? extends Ability> declaration) {
         Schedulers.boundedElastic().schedule(() -> {
-            IAbilityDeclaration<? extends Ability> declaration = user.getSelectedAbility();
             if (declaration == null || !user.canUse(declaration)) return;
             AbilityAction action = this.sequenceService.createAction(declaration.getAbilityClass(), activation);
             List<AbilityAction> actions = user.registerAction(action);
@@ -60,16 +69,44 @@ public class AbilityActivationListener implements Listener {
                     .ifPresent(ability -> {
                         ability.setUser(user);
                         ability.setWorld(user.getWorld());
+                        ActivationMethod activationMethod = atomicActivation.get();
+                        ability.setActivationMethod(activationMethod);
                         if (ability instanceof CollidableAbility collidableAbility) {
                             this.collisionDeclarationService
                                     .findDeclaration((IAbilityDeclaration<? extends CollidableAbility>) declaration)
                                     .ifPresent(collidableAbility::setCollisionDeclaration);
                         }
-                        if (ability.activate(atomicActivation.get()) == AbilityActivateStatus.ACTIVATE) {
+                        if (ability.activate(activationMethod) == AbilityActivateStatus.ACTIVATE) {
                             this.instanceService.register(ability);
                         }
                     });
         });
+    }
+
+    @Schedule(initialDelay = 20, fixedRate = 20, async = true)
+    public void activatePassives() {
+        Collection<IAbilityDeclaration<? extends Ability>> declarations = this.abilityDeclarationService.getDeclarations();
+        Flux.fromStream(this.userService.getAbilityUsers())
+                .filter(user -> user instanceof PlayerAbilityUser)
+                .cast(PlayerAbilityUser.class)
+                .join(Flux.fromIterable(declarations), f -> Flux.never(), f -> Flux.never(), Tuples::of)
+                .subscribe(objects -> {
+                    IAbilityDeclaration<? extends Ability> declaration = objects.getT2();
+                    if (declaration.isActivatedBy(ActivationMethod.PASSIVE)) {
+                        PlayerAbilityUser user = objects.getT1();
+                        Optional<? extends Ability> optional = user.getAbilityInstances(declaration.getAbilityClass())
+                                .filter(ability -> ability.getActivationMethod().equals(ActivationMethod.PASSIVE))
+                                .findFirst();
+                        boolean hasInstance = optional.isPresent();
+                        boolean canUse = user.canUse(declaration);
+                        if (canUse && !hasInstance) {
+                            this.activate(user, ActivationMethod.PASSIVE, declaration);
+                        }
+                        if (!canUse && hasInstance) {
+                            optional.get().destroy(); // destroy instance because user can't is it
+                        }
+                    }
+                });
     }
 
     @EventHandler
