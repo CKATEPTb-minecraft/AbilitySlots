@@ -42,7 +42,6 @@ public class PlayerAbilityUser extends PlayerAbilityTarget implements AbilityUse
     protected final List<AbilityAction> actionHistory = new ArrayList<>();
     protected final Map<IAbilityDeclaration<? extends Ability>, Long> cooldowns = new HashMap<>();
     protected double currentEnergy;
-    private boolean abilitiesEnabled = true;
     private final AbilityUserService service;
     private final Map<String, AbilityBoardPreset> presets = Collections.synchronizedMap(new HashMap<>());
 
@@ -459,6 +458,9 @@ public class PlayerAbilityUser extends PlayerAbilityTarget implements AbilityUse
     }
     // Current board - END
 
+    // Ability toggle - START
+    private boolean abilitiesEnabled = true;
+
     public boolean isAbilitiesEnabled() {
         return this.abilitiesEnabled;
     }
@@ -470,4 +472,5 @@ public class PlayerAbilityUser extends PlayerAbilityTarget implements AbilityUse
     public void disableAbilities() {
         this.abilitiesEnabled = false;
     }
+    // Ability toggle - END
 }
