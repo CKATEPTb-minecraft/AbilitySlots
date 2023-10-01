@@ -35,6 +35,7 @@ We use [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html) to manag
 - [X] PAPI Integration
 - [X] Addon's loader
 - [X] Easy to use annotation based API
+- [ ] Per player ability config
 - [ ] Multiversion (Will never be implemented due to BukkitAPI delegation)
 
 # How To Install Plugin
