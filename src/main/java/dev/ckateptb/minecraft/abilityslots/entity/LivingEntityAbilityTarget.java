@@ -1,11 +1,14 @@
 package dev.ckateptb.minecraft.abilityslots.entity;
 
 import dev.ckateptb.minecraft.abilityslots.ability.Ability;
+import dev.ckateptb.minecraft.abilityslots.user.AbilityUser;
 import dev.ckateptb.minecraft.atom.adapter.AdapterUtils;
+import dev.ckateptb.minecraft.atom.adapter.entity.EntityAdapter;
 import dev.ckateptb.minecraft.atom.adapter.entity.LivingEntityAdapter;
 import dev.ckateptb.minecraft.colliders.math.ImmutableVector;
 import lombok.Getter;
 import lombok.experimental.Delegate;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 
 import java.util.Objects;
@@ -57,7 +60,12 @@ public class LivingEntityAbilityTarget extends EntityAbilityTarget implements Li
     @Override
     public void damage(double amount, boolean ignoreNoDamageTicks, Ability ability) {
         if (ignoreNoDamageTicks) this.handle_.setNoDamageTicks(0);
-        this.handle_.damage(amount, ability.getUser().getHandle_());
+        AbilityUser user = ability.getUser();
+        Entity entity = user.getHandle_();
+        while (entity instanceof EntityAdapter adapter) {
+            entity = adapter.getHandle_();
+        }
+        this.handle_.damage(amount, entity);
     }
 
     public boolean equals(Object other) {
