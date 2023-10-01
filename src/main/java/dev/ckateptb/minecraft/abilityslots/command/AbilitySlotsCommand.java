@@ -92,10 +92,10 @@ public class AbilitySlotsCommand implements Command<AbilitySlots> {
     }
 
 
-    @CommandMethod("abilityslots|as reload|r")
+    @CommandMethod("abilityslots|as reload|r [target]")
     @CommandPermission("abilityslots.command.reload")
-    public void processReload(CommandSender sender) {
-        this.reload.process(sender);
+    public void processReload(CommandSender sender, @Argument("target") Player player) {
+        this.reload.process(sender, player);
     }
 
     @CommandMethod("abilityslots|as clear|c [slot]")

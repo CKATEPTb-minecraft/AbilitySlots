@@ -4,6 +4,7 @@ import com.destroystokyo.paper.event.entity.EntityAddToWorldEvent;
 import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
 import dev.ckateptb.common.tableclothcontainer.annotation.Component;
 import dev.ckateptb.minecraft.abilityslots.ability.service.AbilityInstanceService;
+import dev.ckateptb.minecraft.abilityslots.command.reload.ReloadCommand;
 import dev.ckateptb.minecraft.abilityslots.config.AbilitySlotsConfig;
 import dev.ckateptb.minecraft.abilityslots.database.preset.repository.AbilityBoardPresetRepository;
 import dev.ckateptb.minecraft.abilityslots.database.user.repository.UserBoardRepository;
@@ -11,9 +12,11 @@ import dev.ckateptb.minecraft.abilityslots.event.AbilitySlotsReloadEvent;
 import dev.ckateptb.minecraft.abilityslots.protection.service.ProtectionService;
 import dev.ckateptb.minecraft.abilityslots.user.AbilityUser;
 import dev.ckateptb.minecraft.abilityslots.user.PlayerAbilityUser;
+import dev.ckateptb.minecraft.atom.scheduler.SyncScheduler;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang.Validate;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
@@ -54,6 +57,14 @@ public class AbilityUserService implements Listener {
         return user;
     }
 
+    public synchronized void reloadAbilityUser(ReloadCommand command, Player player) {
+        new SyncScheduler().schedule(() -> {
+            Validate.notNull(command);
+            ((PlayerAbilityUser) this.users.remove(player.getUniqueId())).hideEnergyBoard();
+            this.getAbilityUser(player);
+        });
+    }
+
     public synchronized Stream<AbilityUser> getAbilityUsers() {
         return this.users.values().stream();
     }
@@ -86,7 +97,7 @@ public class AbilityUserService implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST)
     private synchronized void on(AbilitySlotsReloadEvent event) {
         this.users.forEach((uuid, user) -> {
-            if(user instanceof PlayerAbilityUser player) player.hideEnergyBoard();
+            if (user instanceof PlayerAbilityUser player) player.hideEnergyBoard();
         });
         this.users.clear();
         Bukkit.getOnlinePlayers().forEach(this::getAbilityUser);

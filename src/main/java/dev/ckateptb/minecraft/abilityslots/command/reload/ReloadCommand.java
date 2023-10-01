@@ -11,6 +11,7 @@ import dev.ckateptb.minecraft.abilityslots.config.AbilitySlotsConfig;
 import dev.ckateptb.minecraft.abilityslots.user.service.AbilityUserService;
 import me.clip.placeholderapi.PlaceholderAPI;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 
 @Component
 public class ReloadCommand extends AbilitySlotsSubCommand {
@@ -20,8 +21,15 @@ public class ReloadCommand extends AbilitySlotsSubCommand {
 
     @Override
     public void process(CommandSender sender, Object... args) {
+        Player target = (Player) args[0];
+        AbilityCommandSender commandSender = AbilityCommandSender.of(sender);
         ReloadConfig config = this.config.getLanguage().getCommand().getReload();
-        this.plugin.reload();
-        AbilityCommandSender.of(sender).sendMessage(PlaceholderAPI.setPlaceholders(null, config.getReply()));
+        if(target == null) {
+            this.plugin.reload();
+            commandSender.sendMessage(PlaceholderAPI.setPlaceholders(null, config.getReply()));
+        } else {
+            this.userService.reloadAbilityUser(this, target);
+            commandSender.sendMessage(PlaceholderAPI.setPlaceholders(target, config.getReplyPlayer()));
+        }
     }
 }
