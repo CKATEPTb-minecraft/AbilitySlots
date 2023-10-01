@@ -419,7 +419,7 @@ public class PlayerAbilityUser extends PlayerAbilityTarget implements AbilityUse
         for (int i = 1; i <= 9; i++) {
             Method declaredMethod = preset.getClass().getDeclaredMethod("setSlot_" + i, String.class);
             declaredMethod.setAccessible(true);
-            declaredMethod.invoke(preset, Optional.ofNullable(this.abilities[i]).map(IAbilityDeclaration::getName).orElse(null));
+            declaredMethod.invoke(preset, Optional.ofNullable(this.abilities[i - 1]).map(IAbilityDeclaration::getName).orElse(null));
         }
     }
 
