@@ -26,15 +26,15 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerQuitEvent;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
 @Component
 @RequiredArgsConstructor
 public class AbilityUserService implements Listener {
-    private final Map<UUID, AbilityUser> users = new HashMap<>();
+    private final Map<UUID, AbilityUser> users = new ConcurrentHashMap<>();
     @Getter
     private final AbilitySlotsConfig config;
     @Getter
