@@ -29,7 +29,7 @@ public class ReloadCommand extends AbilitySlotsSubCommand {
             commandSender.sendMessage(PlaceholderAPI.setPlaceholders(null, config.getReply()));
         } else {
             this.userService.reloadAbilityUser(this, target);
-            commandSender.sendMessage(PlaceholderAPI.setPlaceholders(target, config.getReplyPlayer()));
+            commandSender.sendMessage(config.getReplyPlayer().replaceAll("%player_name%", target.getName()));
         }
     }
 }
