@@ -7,10 +7,14 @@ import dev.ckateptb.minecraft.abilityslots.ability.declaration.IAbilityDeclarati
 import dev.ckateptb.minecraft.abilityslots.ability.enums.AbilityTickStatus;
 import dev.ckateptb.minecraft.abilityslots.ability.service.config.LagPreventConfig;
 import dev.ckateptb.minecraft.abilityslots.config.AbilitySlotsConfig;
+import dev.ckateptb.minecraft.abilityslots.event.AbilitySlotsReloadEvent;
 import dev.ckateptb.minecraft.abilityslots.user.AbilityUser;
 import dev.ckateptb.minecraft.nicotine.annotation.Schedule;
 import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
 import org.slf4j.helpers.MessageFormatter;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -29,7 +33,7 @@ import java.util.stream.Stream;
 @Component
 @CustomLog
 @RequiredArgsConstructor
-public class AbilityInstanceService {
+public class AbilityInstanceService implements Listener {
     private final Scheduler abilityScheduler = Schedulers.newSingle("abilities", true);
     private final Scheduler timeoutScheduler = Schedulers.newSingle("timeout", true);
     private final Set<Ability> abilities = Collections.synchronizedSet(ConcurrentHashMap.newKeySet());
@@ -119,5 +123,10 @@ public class AbilityInstanceService {
 
     public synchronized Stream<Ability> instances() {
         return this.abilities.stream();
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    private void on(AbilitySlotsReloadEvent event) {
+        this.destroy(this.abilities.toArray(Ability[]::new));
     }
 }
