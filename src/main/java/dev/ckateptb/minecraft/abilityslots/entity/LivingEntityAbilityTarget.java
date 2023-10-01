@@ -57,7 +57,7 @@ public class LivingEntityAbilityTarget extends EntityAbilityTarget implements Li
     @Override
     public void damage(double amount, boolean ignoreNoDamageTicks, Ability ability) {
         if (ignoreNoDamageTicks) this.handle_.setNoDamageTicks(0);
-        this.handle_.damage(amount);
+        this.handle_.damage(amount, ability.getUser().getHandle_());
     }
 
     public boolean equals(Object other) {
