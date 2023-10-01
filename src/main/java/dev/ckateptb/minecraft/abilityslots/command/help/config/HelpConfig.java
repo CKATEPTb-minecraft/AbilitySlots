@@ -42,9 +42,9 @@ public class HelpConfig {
                 "&(hover:text &7Replace the current ability board with a preset with the specified name&)" +
                 "&(click:suggest /abilityslots preset bind&)");
         this.reply.add("&8↳ &b&o&[&[/abilityslots reload&]" +
-                "&(hover:text &7Reload the plugin configuration, addon's and their configuration," +
-                " services used by the plugin&) " +
-                "&[&8[target]&]&(Reload calculations for the specified player&)" +
+                "&(hover:text &7Reload the plugin configuration, addon's and their configuration, " +
+                "services used by the plugin&) &8&[[target]&]" +
+                "&(hover:text &7Reload calculations for the specified player&)" +
                 "&]&(click:suggest /abilityslots reload&)");
     }
 }
