@@ -34,7 +34,9 @@ public class AbilityCommandSender implements CommandSender {
      */
     @Override
     public void sendMessage(@NotNull String message) {
-        this.handle_.sendMessage(MessageFormatter.toComponent(ChatColor.translateAlternateColorCodes('&', message)));
+        this.handle_.sendMessage(MessageFormatter.toComponent(
+                this.wrapInkyMessage(ChatColor.translateAlternateColorCodes('&', message)))
+        );
     }
 
     /**
@@ -47,7 +49,7 @@ public class AbilityCommandSender implements CommandSender {
     public void sendMessage(@NotNull String... messages) {
         if (messages.length > 1) {
             List<String> list = Arrays.stream(messages)
-                    .map(message -> ChatColor.translateAlternateColorCodes('&', message))
+                    .map(message -> this.wrapInkyMessage(ChatColor.translateAlternateColorCodes('&', message)))
                     .collect(Collectors.toList());
             Component component = MessageFormatter.toComponent(list.remove(0), list.toArray(String[]::new));
             InkyMessage serializer = InkyMessage.inkyMessage();
@@ -56,6 +58,31 @@ public class AbilityCommandSender implements CommandSender {
                     .replace("\\\\)", ")"));
             this.handle_.sendMessage(serializer.deserialize(result));
         }
+    }
+
+    private String wrapInkyMessage(String text) {
+        return Arrays.stream(text.split(" "))
+                .map(line -> line.replace("&(", "&=↳="))
+                .map(line -> line.replace("&)", "&=↳↳="))
+                .map(line -> line.replace("&[", "&=↳↳↳="))
+                .map(line -> line.replace("&]", "&=↳↳↳↳="))
+
+                .map(line -> line.replace("\\(", "("))
+                .map(line -> line.replace("(", "\\("))
+
+                .map(line -> line.replace("\\)", ")"))
+                .map(line -> line.replace(")", "\\)"))
+
+                .map(line -> line.replace("\\[", "["))
+
+                .map(line -> line.replace("\\]", "]"))
+                .map(line -> line.replace("]", "\\]"))
+
+                .map(line -> line.replace("&=↳=", "("))
+                .map(line -> line.replace("&=↳↳=", ")"))
+                .map(line -> line.replace("&=↳↳↳=", "&["))
+                .map(line -> line.replace("&=↳↳↳↳=", "]"))
+                .collect(Collectors.joining(" "));
     }
 
     public Optional<Player> asPlayer() {

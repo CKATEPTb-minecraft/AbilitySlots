@@ -8,7 +8,7 @@ import dev.ckateptb.minecraft.abilityslots.ability.declaration.IAbilityDeclarati
 import dev.ckateptb.minecraft.abilityslots.ability.declaration.service.AbilityDeclarationService;
 import dev.ckateptb.minecraft.abilityslots.ability.enums.ActivationMethod;
 import dev.ckateptb.minecraft.abilityslots.command.AbilitySlotsSubCommand;
-import dev.ckateptb.minecraft.abilityslots.command.config.CommandLanguageConfig;
+import dev.ckateptb.minecraft.abilityslots.command.display.config.DisplayConfig;
 import dev.ckateptb.minecraft.abilityslots.command.sender.AbilityCommandSender;
 import dev.ckateptb.minecraft.abilityslots.config.AbilitySlotsConfig;
 import dev.ckateptb.minecraft.abilityslots.interfaces.DisplayNameHolder;
@@ -20,7 +20,6 @@ import org.bukkit.entity.Player;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Component
@@ -35,89 +34,13 @@ public class DisplayCommand extends AbilitySlotsSubCommand {
     @Override
     public void process(CommandSender sender, Object... args) {
         AbilityCategory category = (AbilityCategory) args[0];
-        if (category == null) {
-            this.displayCategories(sender);
-        } else {
-            this.displayAbilities(sender, category);
-        }
+        DisplayConfig display = this.config.getLanguage().getCommand().getDisplay();
+        if (category == null) this.displayCategories(sender, display);
+        else this.displayAbilities(sender, category, display);
     }
 
-    private void displayAbilities(CommandSender sender, AbilityCategory category) {
-        CommandLanguageConfig config = this.config.getLanguage().getCommand();
-        List<IAbilityDeclaration<?>> bindable = new ArrayList<>();
-        List<IAbilityDeclaration<?>> passives = new ArrayList<>();
-        List<IAbilityDeclaration<?>> sequences = new ArrayList<>();
-        this.abilityService.getDeclarations().stream()
-                .filter(declaration -> declaration.getCategory() == category)
-                .filter(declaration -> {
-                    if (sender instanceof Player player) {
-                        return this.userService.getAbilityUser(player).canUse(declaration);
-                    }
-                    return true;
-                })
-                .sorted(DISPLAY_NAME_COMPARATOR)
-                .forEach(declaration -> {
-                    int length = declaration.getActivationMethods().length;
-                    boolean sequence = declaration.isActivatedBy(ActivationMethod.SEQUENCE);
-                    boolean passive = declaration.isActivatedBy(ActivationMethod.PASSIVE);
-                    if (sequence) {
-                        sequences.add(declaration);
-                        if (length > (passive ? 2 : 1)) {
-                            bindable.add(declaration);
-                        }
-                    }
-                    if (passive) {
-                        passives.add(declaration);
-                        if (length > (sequence ? 2 : 1)) {
-                            bindable.add(declaration);
-                        }
-                    }
-                    if (!sequence && !passive) {
-                        bindable.add(declaration);
-                    }
-                });
-        String abilityPrefix = category.getAbilityPrefix();
-        String abilityDescription = config.getAbilityDescription();
-        String abilityInstruction = config.getAbilityInstruction();
-        String clickToBind = "(hover:text &r" + abilityPrefix + config.getClickToBind() + ")";
-        String bindableAbilities = bindable.stream().map(declaration -> {
-            String abilityName = declaration.getName();
-            String abilityInfo = "&8 -- &r" + abilityPrefix + "&[" + declaration.getDisplayName() +
-                    "](click:suggest /abilityslots bind " + abilityName + ")(hover:text &r" + abilityDescription +
-                    " &r" + abilityPrefix + declaration.getDescription() + "\n&r" + abilityInstruction + " &r" +
-                    abilityPrefix + declaration.getInstruction() + ")";
-            return abilityInfo +
-                    " &[①]" + clickToBind + "(click:suggest /abilityslots bind " + declaration.getName() + " 1)" +
-                    " &[②]" + clickToBind + "(click:suggest /abilityslots bind " + declaration.getName() + " 2)" +
-                    " &[③]" + clickToBind + "(click:suggest /abilityslots bind " + declaration.getName() + " 3)" +
-                    " &[④]" + clickToBind + "(click:suggest /abilityslots bind " + declaration.getName() + " 4)" +
-                    " &[⑤]" + clickToBind + "(click:suggest /abilityslots bind " + declaration.getName() + " 5)" +
-                    " &[⑥]" + clickToBind + "(click:suggest /abilityslots bind " + declaration.getName() + " 6)" +
-                    " &[⑦]" + clickToBind + "(click:suggest /abilityslots bind " + declaration.getName() + " 7)" +
-                    " &[⑧]" + clickToBind + "(click:suggest /abilityslots bind " + declaration.getName() + " 8)" +
-                    " &[⑨]" + clickToBind + "(click:suggest /abilityslots bind " + declaration.getName() + " 9)";
-        }).collect(Collectors.joining("\n&r"));
-        Function<? super IAbilityDeclaration<?>, String> mapper = declaration -> "&8 -- &r" +
-                abilityPrefix + "&[" + declaration.getDisplayName() + "](hover:text &r" + abilityDescription + " &r" +
-                abilityPrefix + declaration.getDescription() + "\n&r" + abilityInstruction + " &r" + abilityPrefix +
-                declaration.getInstruction() + ")";
-        String passiveAbilities = passives.stream().map(mapper).collect(Collectors.joining("\n&r"));
-        String sequenceAbilities = sequences.stream().map(mapper).collect(Collectors.joining("\n&r"));
-        String categoryInfo = abilityPrefix + "&[" + category.getDisplayName() +
-                "](click:suggest /abilityslots display " + category.getName() + ")(hover:text " + abilityPrefix +
-                category.getDescription() + ")";
-        AbilityCommandSender.of(sender).sendMessage(config.getDisplayAbilities().replaceAll("%category%", categoryInfo) + "\n&r" +
-                config.getDisplayBindable() + "&r" +
-                (bindableAbilities.length() < 1 ? " " + config.getNoAbilitiesAvailable() : "\n" + bindableAbilities) + "\n&r" +
-                config.getDisplayPassives() + "&r" +
-                (passiveAbilities.length() < 1 ? " " + config.getNoAbilitiesAvailable() : "\n" + passiveAbilities) + "\n&r" +
-                config.getDisplaySequences() + "&r" +
-                (sequenceAbilities.length() < 1 ? " " + config.getNoAbilitiesAvailable() : "\n" + sequenceAbilities)
-        );
-    }
-
-    private void displayCategories(CommandSender sender) {
-        CommandLanguageConfig config = this.config.getLanguage().getCommand();
+    private void displayCategories(CommandSender sender, DisplayConfig config) {
+        String categoryFormat = config.getCategoryFormat();
         String allowedCategories = this.categoryService.getCategories().stream()
                 .filter(value -> {
                     if (sender instanceof Player player) {
@@ -126,13 +49,80 @@ public class DisplayCommand extends AbilitySlotsSubCommand {
                     return true;
                 })
                 .sorted(DISPLAY_NAME_COMPARATOR)
-                .map(o -> "&[" + o.getDisplayName() + "](click:suggest /abilityslots display " + o.getName() + ")" +
-                        "(hover:text " + o.getAbilityPrefix() + o.getDescription() + ")")
-                .collect(Collectors.joining("&r, "));
-        AbilityCommandSender.of(sender).sendMessage(
-                config.getDisplayCategories() +
-                        "&r " +
-                        (allowedCategories.length() > 0 ? allowedCategories : config.getNoCategoriesAvailable())
-        );
+                .map(category -> categoryFormat
+                        .replaceAll("%category_ability_prefix%", category.getAbilityPrefix())
+                        .replaceAll("%category_display_name%", category.getDisplayName())
+                        .replaceAll("%category_name%", category.getName())
+                )
+                .collect(Collectors.joining("\n"));
+        AbilityCommandSender commandSender = AbilityCommandSender.of(sender);
+        if (allowedCategories.length() > 0) {
+            commandSender.sendMessage(String.join("\n", config.getAllowedCategories(), allowedCategories));
+        } else commandSender.sendMessage(config.getEmptyCategories());
+    }
+
+    private void displayAbilities(CommandSender sender, AbilityCategory category, DisplayConfig config) {
+        List<IAbilityDeclaration<?>> bindable = new ArrayList<>();
+        List<IAbilityDeclaration<?>> passives = new ArrayList<>();
+        List<IAbilityDeclaration<?>> sequences = new ArrayList<>();
+        this.abilityService.getDeclarations().stream()
+                .filter(declaration -> {
+                    if (declaration.getCategory() != category) return false;
+                    if (!(sender instanceof Player player)) return true;
+                    return this.userService.getAbilityUser(player).canUse(declaration);
+                })
+                .sorted(DISPLAY_NAME_COMPARATOR)
+                .forEach(declaration -> {
+                    if (declaration.isBindable()) {
+                        bindable.add(declaration);
+                    }
+                    if (declaration.isActivatedBy(ActivationMethod.SEQUENCE)) {
+                        sequences.add(declaration);
+                    }
+                    if (declaration.isActivatedBy(ActivationMethod.PASSIVE)) {
+                        passives.add(declaration);
+                    }
+                });
+        int bindableCount = bindable.size();
+        int passiveCount = passives.size();
+        int sequenceCount = sequences.size();
+        int count = bindableCount + passiveCount + sequenceCount;
+        if (count == 0) {
+            AbilityCommandSender.of(sender).sendMessage(config.getEmptyAbilities());
+            return;
+        }
+        StringBuilder builder = new StringBuilder(config.getAllowedAbilities());
+        if (bindableCount > 0) {
+            builder.append("\n").append(config.getBindable());
+            String format = config.getBindableFormat();
+            bindable.stream()
+                    .map(declaration -> this.setPlaceholders(declaration, format))
+                    .forEach(ability -> builder.append("\n").append(ability));
+        }
+        if (passiveCount > 0) {
+            builder.append("\n").append(config.getPassive());
+            String format = config.getPassiveFormat();
+            passives.stream()
+                    .map(declaration -> this.setPlaceholders(declaration, format))
+                    .forEach(ability -> builder.append("\n").append(ability));
+        }
+        if (sequenceCount > 0) {
+            builder.append("\n").append(config.getSequence());
+            String format = config.getSequenceFormat();
+            sequences.stream()
+                    .map(declaration -> this.setPlaceholders(declaration, format))
+                    .forEach(ability -> builder.append("\n").append(ability));
+        }
+        AbilityCommandSender.of(sender).sendMessage(builder.toString());
+    }
+
+    private String setPlaceholders(IAbilityDeclaration<?> declaration, String formatter) {
+        return formatter
+                .replaceAll("%category_ability_prefix%", declaration.getCategory().getAbilityPrefix())
+                .replaceAll("%ability_display_name%", declaration.getDisplayName())
+                .replaceAll("%ability_name%", declaration.getName())
+                .replaceAll("%ability_author%", declaration.getAuthor())
+                .replaceAll("%ability_description%", declaration.getDescription())
+                .replaceAll("%ability_instruction%", declaration.getInstruction());
     }
 }

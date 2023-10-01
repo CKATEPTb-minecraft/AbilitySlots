@@ -5,7 +5,7 @@ import dev.ckateptb.minecraft.abilityslots.AbilitySlots;
 import dev.ckateptb.minecraft.abilityslots.ability.category.service.AbilityCategoryService;
 import dev.ckateptb.minecraft.abilityslots.ability.declaration.service.AbilityDeclarationService;
 import dev.ckateptb.minecraft.abilityslots.command.AbilitySlotsSubCommand;
-import dev.ckateptb.minecraft.abilityslots.command.config.PresetLanguageConfig;
+import dev.ckateptb.minecraft.abilityslots.command.preset.delete.config.PresetDeleteConfig;
 import dev.ckateptb.minecraft.abilityslots.command.sender.AbilityCommandSender;
 import dev.ckateptb.minecraft.abilityslots.config.AbilitySlotsConfig;
 import dev.ckateptb.minecraft.abilityslots.database.preset.model.AbilityBoardPreset;
@@ -24,18 +24,16 @@ public class PresetDeleteCommand extends AbilitySlotsSubCommand {
 
     @Override
     public void process(CommandSender sender, Object... args) {
-        Player player = (Player) sender;
         String name = (String) args[0];
-        PlayerAbilityUser user = this.userService.getAbilityUser(player);
-        PresetLanguageConfig config = this.config.getLanguage().getCommand().getPreset();
+        PlayerAbilityUser user = this.userService.getAbilityUser((Player) sender);
+        PresetDeleteConfig config = this.config.getLanguage().getCommand().getPreset().getDelete();
         Optional<AbilityBoardPreset> optional = user.getPreset(name);
-        String reply = "";
+        AbilityCommandSender commandSender = AbilityCommandSender.of(sender);
         if (optional.isPresent()) {
             user.deletePreset(optional.get());
-            reply = config.getDeleteSuccess();
+            commandSender.sendMessage(config.getReply().replaceAll("%preset_name%", name));
         } else {
-            reply = config.getDeleteFailed();
+            commandSender.sendMessage(config.getFailed().replaceAll("%preset_name%", name));
         }
-        AbilityCommandSender.of(player).sendMessage(reply, "%preset%", name);
     }
 }

@@ -29,9 +29,9 @@ public class AbilityParser implements ArgumentParser<CommandSender, IAbilityDecl
                 context
         );
         if (input == null) return ArgumentParseResult.failure(exception);
-        ArgumentParseResult<?> result = this.abilityService.findDeclaration(input).filter(category -> {
+        ArgumentParseResult<?> result = this.abilityService.findDeclaration(input).filter(declaration -> {
             if (context.getSender() instanceof Player player) {
-                return this.userService.getAbilityUser(player).canUse(category);
+                return this.userService.getAbilityUser(player).canBind(declaration);
             }
             return true;
         }).map(ArgumentParseResult::success).orElse(ArgumentParseResult.failure(exception));

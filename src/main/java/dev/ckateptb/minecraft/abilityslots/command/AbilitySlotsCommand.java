@@ -24,6 +24,7 @@ import dev.ckateptb.minecraft.abilityslots.command.preset.create.PresetCreateCom
 import dev.ckateptb.minecraft.abilityslots.command.preset.delete.PresetDeleteCommand;
 import dev.ckateptb.minecraft.abilityslots.command.preset.list.PresetListCommand;
 import dev.ckateptb.minecraft.abilityslots.command.reload.ReloadCommand;
+import dev.ckateptb.minecraft.abilityslots.command.toggle.ToggleCommand;
 import dev.ckateptb.minecraft.abilityslots.command.who.WhoCommand;
 import dev.ckateptb.minecraft.abilityslots.user.service.AbilityUserService;
 import dev.ckateptb.minecraft.supervisor.Command;
@@ -53,6 +54,7 @@ public class AbilitySlotsCommand implements Command<AbilitySlots> {
     private final ReloadCommand reload;
     private final ClearCommand clear;
     private final WhoCommand who;
+    private final ToggleCommand toggle;
     private final PresetListCommand presetList;
     private final PresetCreateCommand presetCreate;
     private final PresetDeleteCommand presetDelete;
@@ -140,5 +142,11 @@ public class AbilitySlotsCommand implements Command<AbilitySlots> {
     @CommandPermission("abilityslots.command.preset.bind")
     public void processPresetBind(Player sender, @Argument(value = "name", suggestions = "preset") String name) {
         this.presetBind.process(sender, name);
+    }
+
+    @CommandMethod("abilityslots|as toggle|t")
+    @CommandPermission("abilityslots.command.toggle")
+    public void processToggle(Player sender) {
+        this.toggle.process(sender);
     }
 }

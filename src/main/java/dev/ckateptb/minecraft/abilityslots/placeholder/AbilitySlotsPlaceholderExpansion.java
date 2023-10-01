@@ -5,6 +5,7 @@ import dev.ckateptb.common.tableclothcontainer.annotation.PostConstruct;
 import dev.ckateptb.minecraft.abilityslots.AbilitySlots;
 import dev.ckateptb.minecraft.abilityslots.ability.Ability;
 import dev.ckateptb.minecraft.abilityslots.ability.declaration.IAbilityDeclaration;
+import dev.ckateptb.minecraft.abilityslots.config.AbilitySlotsConfig;
 import dev.ckateptb.minecraft.abilityslots.user.PlayerAbilityUser;
 import dev.ckateptb.minecraft.abilityslots.user.service.AbilityUserService;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
@@ -18,10 +19,12 @@ import org.jetbrains.annotations.Nullable;
 public class AbilitySlotsPlaceholderExpansion extends PlaceholderExpansion {
     private final PluginDescriptionFile description;
     private final AbilityUserService userService;
+    private final AbilitySlotsConfig config;
 
-    public AbilitySlotsPlaceholderExpansion(AbilitySlots plugin, AbilityUserService userService) {
+    public AbilitySlotsPlaceholderExpansion(AbilitySlots plugin, AbilityUserService userService, AbilitySlotsConfig config) {
         this.description = plugin.getDescription();
         this.userService = userService;
+        this.config = config;
     }
 
     @PostConstruct
@@ -46,6 +49,16 @@ public class AbilitySlotsPlaceholderExpansion extends PlaceholderExpansion {
 
     @Override
     public @Nullable String onPlaceholderRequest(Player player, @NotNull String params) {
+        String noPlayerResult = switch (params.toLowerCase()) {
+            case "plugin_name" -> this.description.getName();
+            case "plugin_version" -> this.description.getVersion();
+            case "plugin_author" -> "&[CKATEPTb&]&(click:url https://github.com/CKATEPTb&)&(hover:text " +
+                    this.config.getLanguage().getCommand().getHelp().getAuthorHover()
+                            .replace("\\(", "(")
+                            .replace("(", "\\(") + "&)";
+            default -> null;
+        };
+        if(noPlayerResult != null) return noPlayerResult;
         if (player == null) return null;
         PlayerAbilityUser user = this.userService.getAbilityUser(player);
         return switch (params.toLowerCase()) {
@@ -78,6 +91,12 @@ public class AbilitySlotsPlaceholderExpansion extends PlaceholderExpansion {
             case "formatted_ability_8_no_cd" -> this.getAbility(user, 8, true, false);
             case "formatted_ability_9_no_cd" -> this.getAbility(user, 9, true, false);
             case "formatted_ability_current_no_cd" -> this.getAbility(user, 0, true, false);
+            case "%abilityslots_plugin_name%" -> this.description.getName();
+            case "%abilityslots_plugin_version%" -> this.description.getVersion();
+            case "%abilityslots_plugin_author%" -> "&[CKATEPTb](click:url https://github.com/CKATEPTb)(hover:text " +
+                    this.config.getLanguage().getCommand().getHelp().getAuthorHover()
+                            .replace("\\(", "(")
+                            .replace("(", "\\(") + ")";
             default -> null;
         };
     }
