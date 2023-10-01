@@ -62,13 +62,13 @@ public class PlayerAbilityUser extends PlayerAbilityTarget implements AbilityUse
 
     @Override
     public IAbilityDeclaration<? extends Ability>[] getAbilities() {
-        return this.abilities;
+        return this.overrideAbilities == null ? this.abilities : this.overrideAbilities;
     }
 
     @Override
     public IAbilityDeclaration<? extends Ability> getAbility(int slot) {
         Validate.inclusiveBetween(1, 9, slot);
-        return this.abilities[slot - 1];
+        return this.getAbilities()[slot - 1];
     }
 
     @Override
@@ -419,7 +419,7 @@ public class PlayerAbilityUser extends PlayerAbilityTarget implements AbilityUse
         for (int i = 1; i <= 9; i++) {
             Method declaredMethod = preset.getClass().getDeclaredMethod("setSlot_" + i, String.class);
             declaredMethod.setAccessible(true);
-            declaredMethod.invoke(preset, Optional.ofNullable(this.getAbility(i)).map(IAbilityDeclaration::getName).orElse(null));
+            declaredMethod.invoke(preset, Optional.ofNullable(this.abilities[i]).map(IAbilityDeclaration::getName).orElse(null));
         }
     }
 
@@ -473,4 +473,21 @@ public class PlayerAbilityUser extends PlayerAbilityTarget implements AbilityUse
         this.abilitiesEnabled = false;
     }
     // Ability toggle - END
+
+    // Force ability - START
+    protected IAbilityDeclaration<? extends Ability>[] overrideAbilities;
+
+    public void setOverrideAbilities(IAbilityDeclaration<? extends Ability>[] abilities) {
+        Validate.isTrue(abilities == null || abilities.length == 9);
+        this.overrideAbilities = abilities;
+    }
+
+    public void removeOverrideAbilities() {
+        this.setOverrideAbilities(null);
+    }
+
+    public Optional<IAbilityDeclaration<? extends Ability>[]> getOverrideAbilities() {
+        return Optional.ofNullable(this.overrideAbilities);
+    }
+    // Force ability - END
 }
