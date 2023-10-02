@@ -34,6 +34,7 @@ public class EntityAbilityTarget implements AbilityTarget, Entity {
     private MainHand mainHand;
     private float yaw;
     private float pitch;
+    private double lastFallDistance;
 
     protected EntityAbilityTarget(Entity entity) {
         this.handle_ = AdapterUtils.adapt(entity);

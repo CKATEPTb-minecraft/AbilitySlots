@@ -19,6 +19,7 @@ import io.papermc.paper.event.player.PlayerArmSwingEvent;
 import lombok.RequiredArgsConstructor;
 import org.bukkit.GameMode;
 import org.bukkit.block.BlockFace;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -119,9 +120,11 @@ public class AbilityActivationListener implements Listener {
 
     @EventHandler
     public void on(EntityDamageEvent event) {
-        if (!(event.getEntity() instanceof Player player)) return;
+        Entity entity = event.getEntity();
+        if (!(entity instanceof Player player)) return;
         PlayerAbilityUser user = userService.getAbilityUser(player);
         if (event.getCause() == EntityDamageEvent.DamageCause.FALL) {
+            user.setLastFallDistance(entity.getFallDistance());
             this.activate(user, ActivationMethod.FALL);
         }
     }

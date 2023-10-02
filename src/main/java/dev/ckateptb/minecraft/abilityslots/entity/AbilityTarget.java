@@ -76,4 +76,8 @@ public interface AbilityTarget {
     void damage(double amount, boolean ignoreNoDamageTicks, Ability ability);
 
     Ray ray(double distance, double size);
+
+    double getLastFallDistance();
+
+    void setLastFallDistance(double distance);
 }
