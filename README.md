@@ -29,7 +29,7 @@ We use [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html) to manag
 - [X] Ability board
 - [X] Temporary block system
 - [X] Respect protection plugins
-- [ ] Ability combinations (implemented but untested yet)
+- [X] Ability combinations
 - [X] Passive abilities
 - [X] Multi-abilities
 - [X] Database support
