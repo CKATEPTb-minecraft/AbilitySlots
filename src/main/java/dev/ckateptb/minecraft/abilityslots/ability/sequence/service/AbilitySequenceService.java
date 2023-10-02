@@ -88,7 +88,7 @@ public class AbilitySequenceService implements Listener {
         return maxActionsSize.get();
     }
 
-    @EventHandler(priority = EventPriority.NORMAL)
+    @EventHandler(priority = EventPriority.LOWEST)
     private void on(AbilitySlotsReloadEvent event) {
         this.sequences.clear();
     }
