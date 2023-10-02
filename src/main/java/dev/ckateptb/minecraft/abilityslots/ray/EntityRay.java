@@ -8,6 +8,7 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -97,6 +98,10 @@ public class EntityRay extends Ray {
             Double distance = atomicDistance.get();
             if (distance == -1) return true;
             return ImmutableVector.of(entity.getLocation()).distance(source) <= distance;
-        }).map(AbilityTarget::of);
+        }).map(entity -> {
+            if (entity instanceof Player player) return AbilityTarget.of(player);
+            if (entity instanceof LivingEntity livingEntity) return AbilityTarget.of(livingEntity);
+            return AbilityTarget.of(entity);
+        });
     }
 }
