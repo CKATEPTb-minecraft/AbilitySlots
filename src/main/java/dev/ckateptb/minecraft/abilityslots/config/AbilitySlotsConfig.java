@@ -67,7 +67,7 @@ public class AbilitySlotsConfig extends HoconConfig implements Listener {
 
     @SneakyThrows
     public <T extends Ability> void loadAbility(IAbilityDeclaration<T> declaration) {
-        CommentedConfigurationNode root = this.abilities.node("abilities", declaration.getCategory().getName(), declaration.getName());
+        CommentedConfigurationNode root = this.abilities.node(declaration.getCategory().getName(), declaration.getName());
         CommentedConfigurationNode about = root.node("about");
         declaration.setDisplayName(about.node("displayName").get(String.class, declaration.getDisplayName()));
         declaration.setDescription(about.node("description").get(String.class, declaration.getDescription()));
@@ -81,7 +81,7 @@ public class AbilitySlotsConfig extends HoconConfig implements Listener {
 
     @SneakyThrows
     public <T extends CollidableAbility> List<String> loadCollision(IAbilityDeclaration<T> declaration, List<String> collision) {
-        CommentedConfigurationNode root = this.collisions.node("collisions", declaration.getCategory().getName(), declaration.getName());
+        CommentedConfigurationNode root = this.collisions.node(declaration.getCategory().getName(), declaration.getName());
         List<String> list = root.getList(String.class, collision);
         this.save();
         return list;
