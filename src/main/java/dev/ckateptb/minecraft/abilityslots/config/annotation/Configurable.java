@@ -11,4 +11,10 @@ public @interface Configurable {
     String name() default "";
 
     String comment() default "";
+
+    // Calculation type
+    Modifier modifier() default Modifier.NONE;
+
+    // Can be 'damage', 'distance', 'radius', 'cooldown', 'energy', 'duration' or sth custom
+    String modifierName() default "";
 }

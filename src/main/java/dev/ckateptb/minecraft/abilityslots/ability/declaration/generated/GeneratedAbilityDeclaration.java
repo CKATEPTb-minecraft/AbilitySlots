@@ -6,14 +6,20 @@ import dev.ckateptb.minecraft.abilityslots.ability.declaration.IAbilityDeclarati
 import dev.ckateptb.minecraft.abilityslots.ability.declaration.generated.annotation.AbilityDeclaration;
 import dev.ckateptb.minecraft.abilityslots.ability.enums.ActivationMethod;
 import dev.ckateptb.minecraft.abilityslots.event.AbilityCreateEvent;
-import dev.ckateptb.minecraft.atom.scheduler.SyncScheduler;
+import dev.ckateptb.minecraft.abilityslots.user.AbilityUser;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
 import org.bukkit.Bukkit;
+import org.bukkit.World;
+import reactor.core.publisher.Mono;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Экземпляр данного класса создается автоматически для способностей отмеченных аннотацией {@link AbilityDeclaration}
@@ -35,6 +41,7 @@ public class GeneratedAbilityDeclaration<A extends Ability> implements IAbilityD
     private String displayName;
     private String description;
     private String instruction;
+    private final Map<Field, Object> config = new ConcurrentHashMap<>();
 
     @SneakyThrows
     public GeneratedAbilityDeclaration(AbilityDeclaration declaration, AbilityCategory category, Class<A> abilityClass) {
@@ -54,11 +61,34 @@ public class GeneratedAbilityDeclaration<A extends Ability> implements IAbilityD
     }
 
     @Override
-    @SneakyThrows
-    public A createAbility() {
-        A instance = this.newInstanceConstructor.newInstance();
-        this.setDeclaration.invoke(instance, this);
-        new SyncScheduler().schedule(() -> Bukkit.getPluginManager().callEvent(new AbilityCreateEvent(instance)));
-        return instance;
+    public Mono<A> createAbility(AbilityUser user, World world, ActivationMethod method) {
+        return Mono.just(this.newInstanceConstructor)
+                .<A>handle((constructor, sink) -> {
+                    try {
+                        A instance = constructor.newInstance();
+                        for (Map.Entry<Field, Object> entry : this.config.entrySet()) {
+                            Field field = entry.getKey();
+                            Object value = entry.getValue();
+                            field.set(instance, value);
+                        }
+                        this.setDeclaration.invoke(instance, this);
+                        instance.setUser(user);
+                        instance.setWorld(world);
+                        instance.setActivationMethod(method);
+                        sink.next(instance);
+                    } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+                        sink.error(new RuntimeException(e));
+                    }
+                })
+                .onErrorComplete()
+//                .publishOn(new SyncScheduler()) // If we should call event sync
+                .doOnNext(instance -> {
+                    Bukkit.getPluginManager().callEvent(new AbilityCreateEvent(instance));
+                });
+    }
+
+    @Override
+    public void setFieldValue(Field field, Object value) {
+        this.config.put(field, value);
     }
 }

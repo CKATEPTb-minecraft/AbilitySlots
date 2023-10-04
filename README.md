@@ -36,7 +36,7 @@ We use [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html) to manag
 - [X] PAPI Integration
 - [X] Addon's loader
 - [X] Easy to use annotation based API
-- [ ] Per player ability config
+- [X] Per player ability config
 - [ ] Multiversion (Will never be implemented due to BukkitAPI delegation)
 
 # How To Install Plugin
@@ -79,7 +79,7 @@ import dev.ckateptb.minecraft.abilityslots.config.annotation.Configurable;
 )
 public class ExampleCategory extends AbilityCategory {
     // All information about the category will be placed in the configuration file!
-    // If you want to expand the configuration options, use a static variable with the @Configurable annotation
+    // If you want to expand the configuration options, use a variable with the @Configurable annotation
     @Configurable(
             name = "(optional) You can change the section name inside the configuration file",
             comment = "(optional) You can also leave comments"
@@ -115,14 +115,14 @@ import dev.ckateptb.minecraft.abilityslots.config.annotation.Configurable;
 )
 public class ExampleAbility extends Ability {
     // All information about the ability will be placed in the configuration file!
-    // If you want to expand the configuration options, use a static variable with the @Configurable annotation
+    // If you want to expand the configuration options, use a variable with the @Configurable annotation
     @Configurable(
             name = "(optional) You can change the section name inside the configuration file",
             comment = "(optional) You can also leave comments"
     )
-    private static long cooldown = 6000; // The initial value is the default value
+    private long cooldown = 6000; // The initial value is the default value
     @Configurable
-    private static long energyCost = 10;
+    private long energyCost = 10;
 
 
     // Be sure to declare an empty constructor
@@ -188,14 +188,14 @@ import java.util.Collections;
 @CollisionDeclaration(destructible = {ExampleAbility.class, OtherExampleAbylity.class}) // A list of abilities that must be destroyed when colliding with the current ability.
 public class ExampleAbility extends CollidableAbility {
     // All information about the ability will be placed in the configuration file!
-    // If you want to expand the configuration options, use a static variable with the @Configurable annotation
+    // If you want to expand the configuration options, use a variable with the @Configurable annotation
     @Configurable(
             name = "(optional) You can change the section name inside the configuration file",
             comment = "(optional) You can also leave comments"
     )
-    private static long cooldown = 6000; // The initial value is the default value
+    private long cooldown = 6000; // The initial value is the default value
     @Configurable
-    private static long energyCost = 10;
+    private long energyCost = 10;
 
     private Collider collider;
 
@@ -286,14 +286,14 @@ import java.util.Collections;
 })
 public class ExampleAbility extends CollidableAbility {
     // All information about the ability will be placed in the configuration file!
-    // If you want to expand the configuration options, use a static variable with the @Configurable annotation
+    // If you want to expand the configuration options, use a variable with the @Configurable annotation
     @Configurable(
             name = "(optional) You can change the section name inside the configuration file",
             comment = "(optional) You can also leave comments"
     )
-    private static long cooldown = 6000; // The initial value is the default value
+    private long cooldown = 6000; // The initial value is the default value
     @Configurable
-    private static long energyCost = 10;
+    private long energyCost = 10;
 
     private Collider collider;
 

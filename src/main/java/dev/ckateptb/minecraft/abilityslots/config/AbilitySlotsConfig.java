@@ -23,6 +23,7 @@ import org.bukkit.event.Listener;
 import org.spongepowered.configurate.CommentedConfigurationNode;
 
 import java.io.File;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -36,6 +37,7 @@ public class AbilitySlotsConfig extends HoconConfig implements Listener {
     private GlobalConfig global = new GlobalConfig();
     private CommentedConfigurationNode categories = CommentedConfigurationNode.factory().createNode();
     private CommentedConfigurationNode abilities = CommentedConfigurationNode.factory().createNode();
+    private CommentedConfigurationNode collisions = CommentedConfigurationNode.factory().createNode();
     private LanguageConfig language = new LanguageConfig();
 
     public AbilitySlotsConfig() {
@@ -65,25 +67,32 @@ public class AbilitySlotsConfig extends HoconConfig implements Listener {
 
     @SneakyThrows
     public <T extends Ability> void loadAbility(IAbilityDeclaration<T> declaration) {
-        CommentedConfigurationNode root = this.categories.node(declaration.getCategory().getName(), "abilities", declaration.getName());
+        CommentedConfigurationNode root = this.abilities.node("abilities", declaration.getCategory().getName(), declaration.getName());
         declaration.setDisplayName(root.node("displayName").get(String.class, declaration.getDisplayName()));
         declaration.setDescription(root.node("description").get(String.class, declaration.getDescription()));
         declaration.setInstruction(root.node("instruction").get(String.class, declaration.getInstruction()));
         declaration.setEnabled(root.node("enabled").get(Boolean.class, declaration.isEnabled()));
-        this.loadCustom(null, declaration.getAbilityClass(), root);
+        Class<? extends Ability> abilityClass = declaration.getAbilityClass();
+        Constructor<? extends Ability> constructor = abilityClass.getConstructor();
+        Ability ability = constructor.newInstance();
+        this.loadCustom(ability, abilityClass, root, declaration);
     }
 
     @SneakyThrows
     public <T extends CollidableAbility> List<String> loadCollision(IAbilityDeclaration<T> declaration, List<String> collision) {
-        CommentedConfigurationNode root = this.categories.node(declaration.getCategory().getName(), "abilities", declaration.getName(), "collision");
+        CommentedConfigurationNode root = this.collisions.node("collisions", declaration.getCategory().getName(), declaration.getName());
         List<String> list = root.getList(String.class, collision);
         this.save();
         return list;
     }
 
+    public <T> void loadCustom(T instance, Class<? extends T> clazz, CommentedConfigurationNode root) {
+        this.loadCustom(instance, clazz, root, null);
+    }
+
     @SneakyThrows
     @SuppressWarnings("all")
-    public <T> void loadCustom(T instance, Class<? extends T> clazz, CommentedConfigurationNode root) {
+    public <T> void loadCustom(T instance, Class<? extends T> clazz, CommentedConfigurationNode root, IAbilityDeclaration<?> declaration) {
         Field[] fields = clazz.getDeclaredFields();
         for (Field field : fields) {
             field.setAccessible(true);
@@ -93,17 +102,25 @@ public class AbilitySlotsConfig extends HoconConfig implements Listener {
             String annotationName = annotation.name();
             String keyName = StringUtils.isBlank(annotationName) ? field.getName() : annotationName;
             Object defaultValue = field.get(instance);
-            CommentedConfigurationNode node = root.node(keyName);
+            CommentedConfigurationNode node = root;
+            for (String recursive : keyName.split("\\.")) {
+                node = node.node(recursive);
+            }
             String comment = annotation.comment();
             if (!StringUtils.isBlank(comment)) node = node.comment(comment);
-            field.set(instance, node.get(Primitives.wrap(field.getType()), defaultValue));
+            Object value = node.get(Primitives.wrap(field.getType()), defaultValue);
+            if (instance instanceof Ability ability && declaration != null) {
+                declaration.setFieldValue(field, value);
+            } else {
+                field.set(instance, value);
+            }
         }
         this.save();
     }
 
     @Override
     public File getFile() {
-        return AbilitySlots.getPlugin().getDataFolder().toPath().resolve("config.conf").toFile();
+        return AbilitySlots.getPlugin().getDataFolder().toPath().resolve("config.json").toFile();
     }
 
     @EventHandler(priority = EventPriority.LOWEST)

@@ -6,8 +6,11 @@ import dev.ckateptb.minecraft.abilityslots.ability.enums.ActivationMethod;
 import dev.ckateptb.minecraft.abilityslots.interfaces.DisplayNameHolder;
 import dev.ckateptb.minecraft.abilityslots.user.AbilityUser;
 import org.bukkit.ChatColor;
+import org.bukkit.World;
 import org.jetbrains.annotations.Nullable;
+import reactor.core.publisher.Mono;
 
+import java.lang.reflect.Field;
 import java.time.Duration;
 
 public interface IAbilityDeclaration<A extends Ability> extends DisplayNameHolder {
@@ -123,7 +126,7 @@ public interface IAbilityDeclaration<A extends Ability> extends DisplayNameHolde
      *
      * @return Экземпляр способности, которую описывает данная декларация.
      */
-    A createAbility();
+    Mono<A> createAbility(AbilityUser user, World world, ActivationMethod method);
 
     /**
      * @return Клас способности, которую описывает данная декларация.
@@ -137,4 +140,6 @@ public interface IAbilityDeclaration<A extends Ability> extends DisplayNameHolde
     void setInstruction(String instruction);
 
     void setEnabled(boolean enabled);
+
+    void setFieldValue(Field field, Object value);
 }

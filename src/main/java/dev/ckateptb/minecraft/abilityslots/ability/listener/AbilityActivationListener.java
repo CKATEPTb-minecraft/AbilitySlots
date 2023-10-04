@@ -30,6 +30,7 @@ import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.util.function.Tuples;
 
@@ -53,35 +54,34 @@ public class AbilityActivationListener implements Listener {
 
     @SuppressWarnings("unchecked")
     private void activate(PlayerAbilityUser user, ActivationMethod activation, IAbilityDeclaration<? extends Ability> declaration) {
-        Schedulers.boundedElastic().schedule(() -> {
-            if (declaration == null || !user.canUse(declaration)) return;
-            AbilityAction action = this.sequenceService.createAction(declaration.getAbilityClass(), activation);
-            List<AbilityAction> actions = user.registerAction(action);
-            if (actions.size() > this.sequenceService.getMaxActionsSize()) actions.remove(0);
-            AtomicReference<ActivationMethod> atomicActivation = new AtomicReference<>(ActivationMethod.SEQUENCE);
-            this.sequenceService.findSequence(actions) // Выполнил ли пользователь условия для какого-то Sequence
-                    .filter(user::canUse) // Может ли пользователь использовать Sequence
-                    .or(() -> { // Если Sequence не найден, или у пользователя нет прав, переключаемся на выбранную способности
-                        atomicActivation.set(activation);
-                        return Optional.of(declaration);
-                    })
-                    .filter(ability -> ability.isActivatedBy(atomicActivation.get()))
-                    .map(IAbilityDeclaration::createAbility)
-                    .ifPresent(ability -> {
-                        ability.setUser(user);
-                        ability.setWorld(user.getWorld());
-                        ActivationMethod activationMethod = atomicActivation.get();
-                        ability.setActivationMethod(activationMethod);
-                        if (ability instanceof CollidableAbility collidableAbility) {
-                            this.collisionDeclarationService
-                                    .findDeclaration((IAbilityDeclaration<? extends CollidableAbility>) declaration)
-                                    .ifPresent(collidableAbility::setCollisionDeclaration);
-                        }
-                        if (ability.activate(activationMethod) == AbilityActivateStatus.ACTIVATE) {
-                            this.instanceService.register(ability);
-                        }
-                    });
-        });
+        Mono.defer(() -> {
+                    if (declaration == null || !user.canUse(declaration)) return Mono.empty();
+                    AbilityAction action = this.sequenceService.createAction(declaration.getAbilityClass(), activation);
+                    List<AbilityAction> actions = user.registerAction(action);
+                    if (actions.size() > this.sequenceService.getMaxActionsSize()) actions.remove(0);
+                    AtomicReference<ActivationMethod> atomicActivation = new AtomicReference<>(ActivationMethod.SEQUENCE);
+                    return this.sequenceService.findSequence(actions) // Выполнил ли пользователь условия для какого-то Sequence
+                            .filter(user::canUse) // Может ли пользователь использовать Sequence
+                            .or(() -> { // Если Sequence не найден, или у пользователя нет прав, переключаемся на выбранную способности
+                                atomicActivation.set(activation);
+                                return Optional.of(declaration);
+                            })
+                            .filter(ability -> ability.isActivatedBy(atomicActivation.get()))
+                            .map(ability -> ability.createAbility(user, user.getWorld(), atomicActivation.get()))
+                            .orElse(Mono.empty());
+                })
+                .subscribeOn(Schedulers.boundedElastic())
+                .publishOn(Schedulers.boundedElastic())
+                .subscribe(ability -> {
+                    if (ability instanceof CollidableAbility collidableAbility) {
+                        this.collisionDeclarationService
+                                .findDeclaration((IAbilityDeclaration<? extends CollidableAbility>) declaration)
+                                .ifPresent(collidableAbility::setCollisionDeclaration);
+                    }
+                    if (ability.activate(ability.getActivationMethod()) == AbilityActivateStatus.ACTIVATE) {
+                        this.instanceService.register(ability);
+                    }
+                });
     }
 
     @Schedule(initialDelay = 20, fixedRate = 20, async = true)
