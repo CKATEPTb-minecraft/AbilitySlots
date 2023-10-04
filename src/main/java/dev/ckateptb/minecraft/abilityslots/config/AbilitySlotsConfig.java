@@ -68,10 +68,11 @@ public class AbilitySlotsConfig extends HoconConfig implements Listener {
     @SneakyThrows
     public <T extends Ability> void loadAbility(IAbilityDeclaration<T> declaration) {
         CommentedConfigurationNode root = this.abilities.node("abilities", declaration.getCategory().getName(), declaration.getName());
-        declaration.setDisplayName(root.node("displayName").get(String.class, declaration.getDisplayName()));
-        declaration.setDescription(root.node("description").get(String.class, declaration.getDescription()));
-        declaration.setInstruction(root.node("instruction").get(String.class, declaration.getInstruction()));
-        declaration.setEnabled(root.node("enabled").get(Boolean.class, declaration.isEnabled()));
+        CommentedConfigurationNode about = root.node("about");
+        declaration.setDisplayName(about.node("displayName").get(String.class, declaration.getDisplayName()));
+        declaration.setDescription(about.node("description").get(String.class, declaration.getDescription()));
+        declaration.setInstruction(about.node("instruction").get(String.class, declaration.getInstruction()));
+        declaration.setEnabled(about.node("enabled").get(Boolean.class, declaration.isEnabled()));
         Class<? extends Ability> abilityClass = declaration.getAbilityClass();
         Constructor<? extends Ability> constructor = abilityClass.getConstructor();
         Ability ability = constructor.newInstance();
