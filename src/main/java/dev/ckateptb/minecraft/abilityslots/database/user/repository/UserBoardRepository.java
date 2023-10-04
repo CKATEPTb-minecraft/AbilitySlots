@@ -19,6 +19,7 @@ public class UserBoardRepository implements Repository<UserBoard, UUID> {
     private final ConfigurableRepository<UserBoard, UUID> repository;
 
     public UserBoardRepository(AbilitySlotsConfig config) {
+        config.load();
         DatabaseConfig database = config.getGlobal().getDatabase();
         if (database.getType() == DatabaseConfig.DatabaseType.SQLITE) {
             Path path = AbilitySlots.getPlugin().getDataFolder().toPath().resolve("database.db");

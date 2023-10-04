@@ -22,6 +22,7 @@ public class AbilityBoardPresetRepository implements Repository<AbilityBoardPres
     private final ConfigurableRepository<AbilityBoardPreset, Integer> repository;
 
     public AbilityBoardPresetRepository(AbilitySlotsConfig config) {
+        config.load();
         DatabaseConfig database = config.getGlobal().getDatabase();
         if (database.getType() == DatabaseConfig.DatabaseType.SQLITE) {
             Path path = AbilitySlots.getPlugin().getDataFolder().toPath().resolve("database.db");
