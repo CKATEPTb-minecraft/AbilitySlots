@@ -25,6 +25,8 @@ public class LagPreventConfig {
     @Comment("It is not recommended to change this value.\n" +
             "https://www.baeldung.com/java-daemon-thread")
     private boolean daemon = true;
+    @Comment("It is not recommended to change this value.")
+    private int threadCount = 20;
 
     public enum TickIn {
         SERVER_SYNC,

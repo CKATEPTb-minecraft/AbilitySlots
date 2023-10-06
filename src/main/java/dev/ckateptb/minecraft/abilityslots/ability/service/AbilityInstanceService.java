@@ -10,6 +10,7 @@ import dev.ckateptb.minecraft.abilityslots.config.AbilitySlotsConfig;
 import dev.ckateptb.minecraft.abilityslots.event.AbilitySlotsReloadEvent;
 import dev.ckateptb.minecraft.abilityslots.user.AbilityUser;
 import dev.ckateptb.minecraft.atom.scheduler.SyncScheduler;
+import dev.ckateptb.minecraft.colliders.internal.math3.util.FastMath;
 import dev.ckateptb.minecraft.nicotine.annotation.Schedule;
 import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
@@ -24,11 +25,11 @@ import reactor.core.scheduler.Schedulers;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
-import java.util.Collections;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static reactor.core.scheduler.Schedulers.*;
@@ -37,9 +38,12 @@ import static reactor.core.scheduler.Schedulers.*;
 @CustomLog
 @RequiredArgsConstructor
 public class AbilityInstanceService implements Listener {
-    private Scheduler abilityScheduler;
+    private final List<Scheduler> schedulers = Collections.synchronizedList(new ArrayList<>());
     private Duration block;
+    private Duration lagThreshold;
     private boolean parallel;
+    private int threadCount;
+    private boolean lagAlert;
     private final Scheduler timeoutScheduler = Schedulers.newSingle("timeout", true);
     private final Set<Ability> abilities = Collections.synchronizedSet(ConcurrentHashMap.newKeySet());
 
@@ -63,15 +67,16 @@ public class AbilityInstanceService implements Listener {
                 .filter(ability -> !ability.isLocked());
         try {
             Mono<Void> publisher;
+            Scheduler scheduler = this.getScheduler();
             if (this.parallel) {
                 publisher = flux
-                        .parallel()
-                        .runOn(this.abilityScheduler)
+                        .parallel(DEFAULT_BOUNDED_ELASTIC_SIZE, (int) FastMath.max(16, this.threadCount))
+                        .runOn(scheduler)
                         .flatMap(this::tick)
                         .then();
             } else {
                 publisher = flux
-                        .publishOn(this.abilityScheduler)
+                        .publishOn(scheduler)
                         .flatMap(this::tick)
                         .then();
             }
@@ -81,7 +86,9 @@ public class AbilityInstanceService implements Listener {
             this.abilities.forEach(this::destroy);
             this.abilities.clear();
             if (throwable.getMessage().contains("Timeout on blocking read")) {
-                log.warn("Abilities processing timed out all abilities was destroyed to prevent lags.");
+                if(this.lagAlert) {
+                    log.warn("Abilities processing timed out all abilities was destroyed to prevent lags.");
+                }
             } else {
                 log.error("An error occurred while processing abilities and all abilities was force destroyed.", throwable);
             }
@@ -89,18 +96,17 @@ public class AbilityInstanceService implements Listener {
     }
 
     private Mono<Ability> tick(Ability ability) {
-        LagPreventConfig lagPrevent = this.config.getGlobal().getLagPrevent();
         return Mono.just(ability)
-                .publishOn(this.abilityScheduler)
+                .publishOn(this.getScheduler())
                 .doOnNext(value -> ability.setLocked(true))
                 .map(Ability::tick)
-                .timeout(Duration.of(lagPrevent.getLagThreshold(), ChronoUnit.MILLIS), this.timeoutScheduler)
+                .timeout(this.lagThreshold, this.timeoutScheduler)
                 .onErrorReturn(throwable -> {
                     IAbilityDeclaration<? extends Ability> declaration = ability.getDeclaration();
                     String name = declaration.getName();
                     String author = declaration.getAuthor();
                     if (throwable instanceof TimeoutException) {
-                        if (lagPrevent.isAlertDestroyed()) {
+                        if (this.lagAlert) {
                             log.warn("{} ability processing timed out and was destroyed to" +
                                     " prevent lags. Contact the author {}.", name, author);
                         }
@@ -153,23 +159,49 @@ public class AbilityInstanceService implements Listener {
     private void on(AbilitySlotsReloadEvent event) {
         this.destroy(this.abilities.toArray(Ability[]::new));
         LagPreventConfig lagPrevent = this.config.getGlobal().getLagPrevent();
-        boolean daemon = lagPrevent.isDaemon();
-        this.abilityScheduler = switch (lagPrevent.getTickIn()) {
-            case SINGLE -> Schedulers.newSingle("abilities-s", daemon);
-            case PARALLEL -> Schedulers.newParallel("abilities-p", DEFAULT_POOL_SIZE, daemon);
-            case ELASTIC ->
-                    Schedulers.newBoundedElastic(
-                            DEFAULT_BOUNDED_ELASTIC_SIZE,
-                            DEFAULT_BOUNDED_ELASTIC_QUEUESIZE,
-                            "abilities-e", 60, daemon
-                    );
-            case SERVER_SYNC -> new SyncScheduler();
-            case SERVER_ASYNC -> Schedulers.immediate();
-        };
+        this.threadCount = lagPrevent.getThreadCount();
+        this.createSchedulers(lagPrevent.getTickIn(), this.threadCount, lagPrevent.isDaemon());
         long threshold = lagPrevent.getDropAllThreshold();
+        this.lagThreshold = Duration.of(lagPrevent.getLagThreshold(), ChronoUnit.MILLIS);
+        this.lagAlert = lagPrevent.isAlertDestroyed();
         if (threshold > 0) {
             this.block = Duration.of(threshold, ChronoUnit.MILLIS);
         } else this.block = null;
         this.parallel = lagPrevent.isParallel();
+    }
+
+    private void createSchedulers(LagPreventConfig.TickIn tickIn, int count, boolean daemon) {
+        if(!this.schedulers.isEmpty()) return;
+        count = (int) FastMath.max(Runtime.getRuntime().availableProcessors(), count);
+        Function<Integer, Scheduler> create = switch (tickIn) {
+            case SINGLE -> (index) -> Schedulers.newSingle("abilities-s-" + index, daemon);
+            case PARALLEL -> (index) -> Schedulers.newParallel("abilities-p-" + index, DEFAULT_POOL_SIZE, daemon);
+            case ELASTIC -> (index) -> Schedulers.newBoundedElastic(
+                    DEFAULT_BOUNDED_ELASTIC_SIZE,
+                    DEFAULT_BOUNDED_ELASTIC_QUEUESIZE,
+                    "abilities-e-" + index, 60, daemon
+            );
+            case SERVER_SYNC -> (index) -> new SyncScheduler();
+            case SERVER_ASYNC -> (index) -> Schedulers.immediate();
+        };
+        if (tickIn == LagPreventConfig.TickIn.SERVER_SYNC || tickIn == LagPreventConfig.TickIn.SERVER_ASYNC) {
+            this.schedulers.add(create.apply(0));
+            return;
+        }
+        for (int i = 0; i < count; ++i) {
+            this.schedulers.add(create.apply(i));
+        }
+    }
+
+    private final AtomicInteger threadCounter = new AtomicInteger(0);
+
+    private Scheduler getScheduler() {
+        return this.schedulers.get(threadCounter.updateAndGet(operand -> {
+            operand++;
+            if (operand >= this.schedulers.size()) {
+                operand = 0;
+            }
+            return operand;
+        }));
     }
 }
