@@ -9,7 +9,6 @@ import dev.ckateptb.minecraft.abilityslots.ability.service.config.LagPreventConf
 import dev.ckateptb.minecraft.abilityslots.config.AbilitySlotsConfig;
 import dev.ckateptb.minecraft.abilityslots.event.AbilitySlotsReloadEvent;
 import dev.ckateptb.minecraft.abilityslots.user.AbilityUser;
-import dev.ckateptb.minecraft.atom.scheduler.SyncScheduler;
 import dev.ckateptb.minecraft.colliders.internal.math3.util.FastMath;
 import dev.ckateptb.minecraft.nicotine.annotation.Schedule;
 import lombok.CustomLog;
@@ -29,22 +28,20 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static reactor.core.scheduler.Schedulers.*;
+import static reactor.core.scheduler.Schedulers.DEFAULT_POOL_SIZE;
 
 @Component
 @CustomLog
 @RequiredArgsConstructor
 public class AbilityInstanceService implements Listener {
-    private final List<Scheduler> schedulers = Collections.synchronizedList(new ArrayList<>());
     private Duration block;
     private Duration lagThreshold;
-    private boolean parallel;
-    private int threadCount;
     private boolean lagAlert;
-    private final Scheduler timeoutScheduler = Schedulers.newSingle("timeout", true);
+    private final Scheduler singleScheduler = Schedulers.newSingle("abilities", false);
+    private final Scheduler parallelScheduler = Schedulers.newParallel("abilities", DEFAULT_POOL_SIZE, false);
+    private final Scheduler timeoutScheduler = Schedulers.newParallel("timeout", DEFAULT_POOL_SIZE, true);
     private final Set<Ability> abilities = Collections.synchronizedSet(ConcurrentHashMap.newKeySet());
 
     private final AbilitySlotsConfig config;
@@ -63,30 +60,19 @@ public class AbilityInstanceService implements Listener {
     }
 
     private void tickAbilities() {
-        Flux<Ability> flux = Flux.fromIterable(this.abilities)
-                .filter(ability -> !ability.isLocked());
         try {
-            Mono<Void> publisher;
-            Scheduler scheduler = this.getScheduler();
-            if (this.parallel) {
-                publisher = flux
-                        .parallel(DEFAULT_BOUNDED_ELASTIC_SIZE, (int) FastMath.max(16, this.threadCount))
-                        .runOn(scheduler)
-                        .flatMap(this::tick)
-                        .then();
-            } else {
-                publisher = flux
-                        .publishOn(scheduler)
-                        .flatMap(this::tick)
-                        .then();
-            }
-            if (this.block != null) publisher.block(this.block);
+            boolean parallel = this.block == null;
+            Mono<Void> publisher = Flux.fromIterable(this.abilities)
+                    .filter(ability -> !ability.isLocked())
+                    .flatMap(ability -> this.tick(ability, parallel))
+                    .then();
+            if(!parallel) publisher.block(this.block);
             else publisher.subscribe();
         } catch (Throwable throwable) {
             this.abilities.forEach(this::destroy);
             this.abilities.clear();
             if (throwable.getMessage().contains("Timeout on blocking read")) {
-                if(this.lagAlert) {
+                if (this.lagAlert) {
                     log.warn("Abilities processing timed out all abilities was destroyed to prevent lags.");
                 }
             } else {
@@ -95,9 +81,9 @@ public class AbilityInstanceService implements Listener {
         }
     }
 
-    private Mono<Ability> tick(Ability ability) {
+    private Mono<Ability> tick(Ability ability, boolean parallel) {
         return Mono.just(ability)
-                .publishOn(this.getScheduler())
+                .publishOn(parallel ? this.parallelScheduler : this.singleScheduler)
                 .doOnNext(value -> ability.setLocked(true))
                 .map(Ability::tick)
                 .timeout(this.lagThreshold, this.timeoutScheduler)
@@ -159,49 +145,11 @@ public class AbilityInstanceService implements Listener {
     private void on(AbilitySlotsReloadEvent event) {
         this.destroy(this.abilities.toArray(Ability[]::new));
         LagPreventConfig lagPrevent = this.config.getGlobal().getLagPrevent();
-        this.threadCount = lagPrevent.getThreadCount();
-        this.createSchedulers(lagPrevent.getTickIn(), this.threadCount, lagPrevent.isDaemon());
         long threshold = lagPrevent.getDropAllThreshold();
         this.lagThreshold = Duration.of(lagPrevent.getLagThreshold(), ChronoUnit.MILLIS);
         this.lagAlert = lagPrevent.isAlertDestroyed();
         if (threshold > 0) {
             this.block = Duration.of(threshold, ChronoUnit.MILLIS);
         } else this.block = null;
-        this.parallel = lagPrevent.isParallel();
-    }
-
-    private void createSchedulers(LagPreventConfig.TickIn tickIn, int count, boolean daemon) {
-        if(!this.schedulers.isEmpty()) return;
-        count = (int) FastMath.max(Runtime.getRuntime().availableProcessors(), count);
-        Function<Integer, Scheduler> create = switch (tickIn) {
-            case SINGLE -> (index) -> Schedulers.newSingle("abilities-s-" + index, daemon);
-            case PARALLEL -> (index) -> Schedulers.newParallel("abilities-p-" + index, DEFAULT_POOL_SIZE, daemon);
-            case ELASTIC -> (index) -> Schedulers.newBoundedElastic(
-                    DEFAULT_BOUNDED_ELASTIC_SIZE,
-                    DEFAULT_BOUNDED_ELASTIC_QUEUESIZE,
-                    "abilities-e-" + index, 60, daemon
-            );
-            case SERVER_SYNC -> (index) -> new SyncScheduler();
-            case SERVER_ASYNC -> (index) -> Schedulers.immediate();
-        };
-        if (tickIn == LagPreventConfig.TickIn.SERVER_SYNC || tickIn == LagPreventConfig.TickIn.SERVER_ASYNC) {
-            this.schedulers.add(create.apply(0));
-            return;
-        }
-        for (int i = 0; i < count; ++i) {
-            this.schedulers.add(create.apply(i));
-        }
-    }
-
-    private final AtomicInteger threadCounter = new AtomicInteger(0);
-
-    private Scheduler getScheduler() {
-        return this.schedulers.get(threadCounter.updateAndGet(operand -> {
-            operand++;
-            if (operand >= this.schedulers.size()) {
-                operand = 0;
-            }
-            return operand;
-        }));
     }
 }
