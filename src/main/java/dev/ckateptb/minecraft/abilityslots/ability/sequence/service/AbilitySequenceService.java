@@ -39,7 +39,10 @@ public class AbilitySequenceService implements Listener {
                         int tailSize = tail.size();
                         if (listSize >= tailSize) {
                             for (int i = 0; i < tailSize; ++i) {
-                                if (!Objects.equals(actions.get(listSize - 1 - i), tail.get(tailSize - 1 - i))) {
+                                AbilityAction first = actions.get(listSize - 1 - i);
+                                AbilityAction second = tail.get(tailSize - 1 - i);
+                                if (!(first.ability() == second.ability()
+                                        && second.action().equals(first.action()))) {
                                     return false;
                                 }
                             }
@@ -79,7 +82,7 @@ public class AbilitySequenceService implements Listener {
             public boolean equals(Object obj) {
                 if (!(obj instanceof AbilityAction other)) return false;
                 if (this == other) return true;
-                return Objects.equals(this.action(), other.action()) && Objects.equals(this.ability(), other.ability());
+                return this.action().equals(other.action()) && this.ability().equals(other.ability());
             }
         };
     }

@@ -101,6 +101,15 @@ public class PlayerAbilityUser extends PlayerAbilityTarget implements AbilityUse
     }
 
     public synchronized List<AbilityAction> registerAction(AbilityAction action) {
+        int size = this.actionHistory.size();
+        if(size > 0) {
+            AbilityAction previous = this.actionHistory.get(size - 1);
+            if (previous.ability().equals(action.ability())) {
+                if (previous.action().equals(action.action())) {
+                    return this.actionHistory;
+                }
+            }
+        }
         this.actionHistory.add(action);
         return this.actionHistory;
     }
