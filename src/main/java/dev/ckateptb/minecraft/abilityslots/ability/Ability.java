@@ -20,6 +20,7 @@ public abstract class Ability {
     protected AbilityUser user;
     protected World world;
     protected ActivationMethod activationMethod;
+    private boolean locked;
 
     /**
      * Вызов данного метода управляется {@link dev.ckateptb.minecraft.abilityslots.ability.service.AbilityInstanceService}
