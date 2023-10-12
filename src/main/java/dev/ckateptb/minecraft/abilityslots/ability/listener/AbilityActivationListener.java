@@ -67,7 +67,7 @@ public class AbilityActivationListener implements Listener {
                                 return Optional.of(declaration);
                             })
                             .filter(ability -> ability.isActivatedBy(atomicActivation.get()))
-                            .map(ability -> ability.createAbility(user, user.getWorld(), atomicActivation.get()))
+                            .map(ability -> ability.createAbility(user, user.getWorld(), atomicActivation.get(), instanceService))
                             .orElse(Mono.empty());
                 })
                 .subscribeOn(Schedulers.boundedElastic())

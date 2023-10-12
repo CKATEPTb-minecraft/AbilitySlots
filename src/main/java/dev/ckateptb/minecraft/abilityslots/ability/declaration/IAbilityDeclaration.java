@@ -3,6 +3,7 @@ package dev.ckateptb.minecraft.abilityslots.ability.declaration;
 import dev.ckateptb.minecraft.abilityslots.ability.Ability;
 import dev.ckateptb.minecraft.abilityslots.ability.category.AbilityCategory;
 import dev.ckateptb.minecraft.abilityslots.ability.enums.ActivationMethod;
+import dev.ckateptb.minecraft.abilityslots.ability.service.AbilityInstanceService;
 import dev.ckateptb.minecraft.abilityslots.interfaces.DisplayNameHolder;
 import dev.ckateptb.minecraft.abilityslots.user.AbilityUser;
 import org.bukkit.ChatColor;
@@ -126,7 +127,7 @@ public interface IAbilityDeclaration<A extends Ability> extends DisplayNameHolde
      *
      * @return Экземпляр способности, которую описывает данная декларация.
      */
-    Mono<A> createAbility(AbilityUser user, World world, ActivationMethod method);
+    Mono<A> createAbility(AbilityUser user, World world, ActivationMethod method, AbilityInstanceService service);
 
     /**
      * @return Клас способности, которую описывает данная декларация.

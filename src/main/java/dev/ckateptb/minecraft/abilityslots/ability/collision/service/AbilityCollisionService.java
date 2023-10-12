@@ -21,7 +21,7 @@ import java.util.Set;
 @Component
 @CustomLog
 public class AbilityCollisionService {
-    public Flux<CollidableAbility> findCollided(Set<Ability> abilities) {
+    public Flux<CollidableAbility> findCollided(Collection<Ability> abilities) {
         return this.intersect(Flux.fromIterable(abilities)
                 .filter(ability -> {
                     if (!ability.isLocked() && ability instanceof CollidableAbility collidable) {

@@ -21,9 +21,10 @@ public abstract class Ability {
     protected World world;
     protected ActivationMethod activationMethod;
     private boolean locked;
+    private AbilityInstanceService service;
 
     /**
-     * Вызов данного метода управляется {@link dev.ckateptb.minecraft.abilityslots.ability.service.AbilityInstanceService}
+     * Вызов данного метода управляется {@link AbilityInstanceService}
      * Данный метод вызывается при соблюдении одного из описанных способов активации и управляет логикой самой активации.
      *
      * @param activationMethod указывает какой из описанных способов активации был соблюден.
@@ -32,7 +33,7 @@ public abstract class Ability {
     public abstract AbilityActivateStatus activate(ActivationMethod activationMethod);
 
     /**
-     * Вызов этого метода управляется {@link dev.ckateptb.minecraft.abilityslots.ability.service.AbilityInstanceService}
+     * Вызов этого метода управляется {@link AbilityInstanceService}
      * Данный метод вызывается в асинхронном потоке, вызов которого блокируется,
      * если предыдущий вызов не успел обработаться прежде чем основной поток см. {@link io.papermc.paper.util.TickThread}
      * начнет новый тик. Таким образом можно гарантировать, что основной поток не будет перегружен.
@@ -52,7 +53,7 @@ public abstract class Ability {
     public abstract void destroy(Void unused);
 
     public final void destroy() {
-        IoC.getBean(AbilityInstanceService.class).destroy(this);
+        service.destroy(this);
     }
 
     @Getter

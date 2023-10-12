@@ -5,6 +5,7 @@ import dev.ckateptb.minecraft.abilityslots.ability.category.AbilityCategory;
 import dev.ckateptb.minecraft.abilityslots.ability.declaration.IAbilityDeclaration;
 import dev.ckateptb.minecraft.abilityslots.ability.declaration.generated.annotation.AbilityDeclaration;
 import dev.ckateptb.minecraft.abilityslots.ability.enums.ActivationMethod;
+import dev.ckateptb.minecraft.abilityslots.ability.service.AbilityInstanceService;
 import dev.ckateptb.minecraft.abilityslots.event.AbilityCreateEvent;
 import dev.ckateptb.minecraft.abilityslots.user.AbilityUser;
 import lombok.Getter;
@@ -61,7 +62,7 @@ public class GeneratedAbilityDeclaration<A extends Ability> implements IAbilityD
     }
 
     @Override
-    public Mono<A> createAbility(AbilityUser user, World world, ActivationMethod method) {
+    public Mono<A> createAbility(AbilityUser user, World world, ActivationMethod method, AbilityInstanceService service) {
         return Mono.just(this.newInstanceConstructor)
                 .<A>handle((constructor, sink) -> {
                     try {
@@ -75,6 +76,7 @@ public class GeneratedAbilityDeclaration<A extends Ability> implements IAbilityD
                         instance.setUser(user);
                         instance.setWorld(world);
                         instance.setActivationMethod(method);
+                        instance.setService(service);
                         sink.next(instance);
                     } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
                         sink.error(new RuntimeException(e));
