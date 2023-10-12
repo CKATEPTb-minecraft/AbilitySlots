@@ -10,6 +10,8 @@ import dev.ckateptb.minecraft.abilityslots.protection.griefprevention.GriefPreve
 import dev.ckateptb.minecraft.abilityslots.protection.lwc.LWCProtection;
 import dev.ckateptb.minecraft.abilityslots.protection.towny.TownyProtection;
 import dev.ckateptb.minecraft.abilityslots.protection.worldguard.WorldGuardProtection;
+import dev.ckateptb.minecraft.atom.adapter.location.LocationAdapter;
+import dev.ckateptb.minecraft.atom.adapter.world.WorldAdapter;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.bukkit.Bukkit;
@@ -56,10 +58,19 @@ public class ProtectionService implements Listener, Iterable<Protection> {
 
     public synchronized boolean canUse(LivingEntityAbilityTarget user, Location location) {
         LivingEntity entity = user.getAdapter().getHandle_();
+        if (location instanceof LocationAdapter adapter) {
+            location = adapter.getHandle_();
+        }
         UUID uuid = user.getUniqueId();
+        World world = location.getWorld();
+        if (world instanceof WorldAdapter adapter) {
+            world = adapter.getHandle_();
+        }
+        location.setWorld(world);
+        Location finalLocation = location;
         return this.cache.computeIfAbsent(uuid, key ->
                 Caffeine.newBuilder().expireAfterAccess(Duration.ofMillis(this.config.getGlobal().getProtection().getCacheDuration())).build()
-        ).get(new BlockPos(location), loc -> this.stream().allMatch(protection -> protection.canUse(entity, location)));
+        ).get(new BlockPos(location), loc -> this.stream().allMatch(protection -> protection.canUse(entity, finalLocation)));
     }
 
     @EventHandler
