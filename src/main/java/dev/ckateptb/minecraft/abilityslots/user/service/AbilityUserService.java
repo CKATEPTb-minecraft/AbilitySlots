@@ -3,7 +3,7 @@ package dev.ckateptb.minecraft.abilityslots.user.service;
 import com.destroystokyo.paper.event.entity.EntityAddToWorldEvent;
 import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
 import dev.ckateptb.common.tableclothcontainer.annotation.Component;
-import dev.ckateptb.minecraft.abilityslots.ability.service.AbilityInstanceService;
+import dev.ckateptb.minecraft.abilityslots.ability.Ability;
 import dev.ckateptb.minecraft.abilityslots.command.reload.ReloadCommand;
 import dev.ckateptb.minecraft.abilityslots.config.AbilitySlotsConfig;
 import dev.ckateptb.minecraft.abilityslots.database.preset.repository.AbilityBoardPresetRepository;
@@ -43,8 +43,6 @@ public class AbilityUserService implements Listener {
     private final UserBoardRepository boardsRepository;
     @Getter
     private final ProtectionService protectionService;
-    @Getter
-    private final AbilityInstanceService abilityInstanceService;
 
     public synchronized AbilityUser getAbilityUser(LivingEntity livingEntity) {
         throw new NotImplementedException();
@@ -98,6 +96,7 @@ public class AbilityUserService implements Listener {
     private synchronized void on(AbilitySlotsReloadEvent event) {
         this.users.forEach((uuid, user) -> {
             if (user instanceof PlayerAbilityUser player) player.hideEnergyBoard();
+            user.getAbilityInstances().forEach(Ability::destroy);
         });
         this.users.clear();
         Bukkit.getOnlinePlayers().forEach(this::getAbilityUser);

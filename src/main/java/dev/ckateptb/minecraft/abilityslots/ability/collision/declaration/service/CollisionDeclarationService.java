@@ -68,7 +68,7 @@ public class CollisionDeclarationService implements Listener {
      */
     @EventHandler(priority = EventPriority.LOW)
     private void on(AbilitySlotsReloadEvent event) {
-        if (this.namedDeclarations.size() > 0) log.info("Delete all registered collision declarations");
+        if (!this.namedDeclarations.isEmpty()) log.info("Delete all registered collision declarations");
         this.declarations.clear();
         this.namedDeclarations.clear();
     }

@@ -4,7 +4,6 @@ import dev.ckateptb.minecraft.abilityslots.ability.Ability;
 import dev.ckateptb.minecraft.abilityslots.ability.collision.declaration.ICollisionDeclaration;
 import dev.ckateptb.minecraft.abilityslots.ability.collision.enums.AbilityCollisionResult;
 import dev.ckateptb.minecraft.abilityslots.ability.declaration.IAbilityDeclaration;
-import dev.ckateptb.minecraft.abilityslots.ability.service.AbilityInstanceService;
 import dev.ckateptb.minecraft.colliders.Collider;
 import lombok.Getter;
 import lombok.Setter;
@@ -23,7 +22,6 @@ public abstract class CollidableAbility extends Ability {
     public abstract Collection<Collider> getColliders();
 
     /**
-     * Вызов данного метода управляется {@link AbilityInstanceService}.
      * Данный метод вызывается, когда другая способность, имеющая приоритет в столкновениях, столкнулась с текущей.
      * По задуманной логике вы должны обработать это столкновение в пользу другой способности.
      *

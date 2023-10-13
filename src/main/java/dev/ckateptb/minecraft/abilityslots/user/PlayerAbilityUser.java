@@ -44,6 +44,7 @@ public class PlayerAbilityUser extends PlayerAbilityTarget implements AbilityUse
     protected double currentEnergy;
     private final AbilityUserService service;
     private final Map<String, AbilityBoardPreset> presets = Collections.synchronizedMap(new HashMap<>());
+    private final List<Ability> instances = Collections.synchronizedList(new ArrayList<>());
 
     public PlayerAbilityUser(Player player, AbilityUserService service) {
         super(player);
@@ -92,7 +93,7 @@ public class PlayerAbilityUser extends PlayerAbilityTarget implements AbilityUse
 
     @Override
     public synchronized Stream<Ability> getAbilityInstances() {
-        return this.service.getAbilityInstanceService().instances(this);
+        return new ArrayList<>(this.instances).stream();
     }
 
     @Override
@@ -100,9 +101,17 @@ public class PlayerAbilityUser extends PlayerAbilityTarget implements AbilityUse
         return this.getAbilityInstances().filter(ability -> ability.getClass().equals(type)).map(ability -> (T) ability);
     }
 
+    public synchronized void registerAbility(Ability ability) {
+        this.instances.add(ability);
+    }
+
+    public synchronized void removeAbility(Ability ability) {
+        this.instances.remove(ability);
+    }
+
     public synchronized List<AbilityAction> registerAction(AbilityAction action) {
         int size = this.actionHistory.size();
-        if(size > 0) {
+        if (size > 0) {
             AbilityAction previous = this.actionHistory.get(size - 1);
             if (previous.ability().equals(action.ability())) {
                 if (previous.action().equals(action.action())) {

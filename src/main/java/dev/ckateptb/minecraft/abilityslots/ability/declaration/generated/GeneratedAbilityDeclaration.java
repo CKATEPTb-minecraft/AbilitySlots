@@ -5,14 +5,12 @@ import dev.ckateptb.minecraft.abilityslots.ability.category.AbilityCategory;
 import dev.ckateptb.minecraft.abilityslots.ability.declaration.IAbilityDeclaration;
 import dev.ckateptb.minecraft.abilityslots.ability.declaration.generated.annotation.AbilityDeclaration;
 import dev.ckateptb.minecraft.abilityslots.ability.enums.ActivationMethod;
-import dev.ckateptb.minecraft.abilityslots.ability.service.AbilityInstanceService;
 import dev.ckateptb.minecraft.abilityslots.event.AbilityCreateEvent;
 import dev.ckateptb.minecraft.abilityslots.user.AbilityUser;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
 import org.bukkit.Bukkit;
-import org.bukkit.World;
 import reactor.core.publisher.Mono;
 
 import java.lang.reflect.Constructor;
@@ -62,7 +60,7 @@ public class GeneratedAbilityDeclaration<A extends Ability> implements IAbilityD
     }
 
     @Override
-    public Mono<A> createAbility(AbilityUser user, World world, ActivationMethod method, AbilityInstanceService service) {
+    public Mono<A> createAbility(AbilityUser user, ActivationMethod method) {
         return Mono.just(this.newInstanceConstructor)
                 .<A>handle((constructor, sink) -> {
                     try {
@@ -74,9 +72,8 @@ public class GeneratedAbilityDeclaration<A extends Ability> implements IAbilityD
                         }
                         this.setDeclaration.invoke(instance, this);
                         instance.setUser(user);
-                        instance.setWorld(world);
+                        instance.setWorld(user.getWorld());
                         instance.setActivationMethod(method);
-                        instance.setService(service);
                         sink.next(instance);
                     } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
                         sink.error(new RuntimeException(e));

@@ -11,5 +11,10 @@ import java.util.stream.Stream;
 
 public interface AbilityUser extends AbilityTarget, LivingEntity, CooldownHolder, EnergyHolder, AbilityHolder {
     Stream<Ability> getAbilityInstances();
+
     <T extends Ability> Stream<T> getAbilityInstances(Class<T> type);
+
+    void registerAbility(Ability ability);
+
+    void removeAbility(Ability ability);
 }

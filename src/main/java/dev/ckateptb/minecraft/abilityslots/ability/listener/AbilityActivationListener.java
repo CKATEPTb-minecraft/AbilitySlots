@@ -2,15 +2,10 @@ package dev.ckateptb.minecraft.abilityslots.ability.listener;
 
 import dev.ckateptb.common.tableclothcontainer.annotation.Component;
 import dev.ckateptb.minecraft.abilityslots.ability.Ability;
-import dev.ckateptb.minecraft.abilityslots.ability.collision.CollidableAbility;
-import dev.ckateptb.minecraft.abilityslots.ability.collision.declaration.service.CollisionDeclarationService;
 import dev.ckateptb.minecraft.abilityslots.ability.declaration.IAbilityDeclaration;
 import dev.ckateptb.minecraft.abilityslots.ability.declaration.service.AbilityDeclarationService;
-import dev.ckateptb.minecraft.abilityslots.ability.enums.AbilityActivateStatus;
 import dev.ckateptb.minecraft.abilityslots.ability.enums.ActivationMethod;
-import dev.ckateptb.minecraft.abilityslots.ability.sequence.annotation.AbilityAction;
-import dev.ckateptb.minecraft.abilityslots.ability.sequence.service.AbilitySequenceService;
-import dev.ckateptb.minecraft.abilityslots.ability.service.AbilityInstanceService;
+import dev.ckateptb.minecraft.abilityslots.ability.lifecycle.activate.AbilityActivateLifecycle;
 import dev.ckateptb.minecraft.abilityslots.ray.Ray;
 import dev.ckateptb.minecraft.abilityslots.user.PlayerAbilityUser;
 import dev.ckateptb.minecraft.abilityslots.user.service.AbilityUserService;
@@ -30,58 +25,25 @@ import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 import reactor.util.function.Tuples;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
 
 @Component
 @RequiredArgsConstructor
 public class AbilityActivationListener implements Listener {
     private final AbilityUserService userService;
-    private final AbilitySequenceService sequenceService;
-    private final AbilityInstanceService instanceService;
-    private final CollisionDeclarationService collisionDeclarationService;
+    private final AbilityActivateLifecycle activateLifecycle;
     private final AbilityDeclarationService abilityDeclarationService;
 
     private void activate(PlayerAbilityUser user, ActivationMethod activation) {
         this.activate(user, activation, user.getSelectedAbility());
     }
 
-    @SuppressWarnings("unchecked")
     private void activate(PlayerAbilityUser user, ActivationMethod activation, IAbilityDeclaration<? extends Ability> declaration) {
-        Mono.defer(() -> {
-                    if (declaration == null || !user.canUse(declaration)) return Mono.empty();
-                    AbilityAction action = this.sequenceService.createAction(declaration.getAbilityClass(), activation);
-                    List<AbilityAction> actions = user.registerAction(action);
-                    if (actions.size() > this.sequenceService.getMaxActionsSize()) actions.remove(0);
-                    AtomicReference<ActivationMethod> atomicActivation = new AtomicReference<>(ActivationMethod.SEQUENCE);
-                    return this.sequenceService.findSequence(actions) // Выполнил ли пользователь условия для какого-то Sequence
-                            .filter(user::canUse) // Может ли пользователь использовать Sequence
-                            .or(() -> { // Если Sequence не найден, или у пользователя нет прав, переключаемся на выбранную способности
-                                atomicActivation.set(activation);
-                                return Optional.of(declaration);
-                            })
-                            .filter(ability -> ability.isActivatedBy(atomicActivation.get()))
-                            .map(ability -> ability.createAbility(user, user.getWorld(), atomicActivation.get(), instanceService))
-                            .orElse(Mono.empty());
-                })
-                .subscribeOn(Schedulers.boundedElastic())
-                .publishOn(Schedulers.boundedElastic())
-                .subscribe(ability -> {
-                    if (ability instanceof CollidableAbility collidableAbility) {
-                        this.collisionDeclarationService
-                                .findDeclaration((IAbilityDeclaration<? extends CollidableAbility>) declaration)
-                                .ifPresent(collidableAbility::setCollisionDeclaration);
-                    }
-                    if (ability.activate(ability.getActivationMethod()) == AbilityActivateStatus.ACTIVATE) {
-                        this.instanceService.register(ability);
-                    }
-                });
+        if (declaration == null) return;
+        this.activateLifecycle.emit(Tuples.of(user, declaration, activation));
     }
 
     @Schedule(initialDelay = 20, fixedRate = 20, async = true)

@@ -1,11 +1,9 @@
 package dev.ckateptb.minecraft.abilityslots.ability;
 
-import dev.ckateptb.common.tableclothcontainer.IoC;
 import dev.ckateptb.minecraft.abilityslots.ability.declaration.IAbilityDeclaration;
-import dev.ckateptb.minecraft.abilityslots.ability.enums.AbilityActivateStatus;
 import dev.ckateptb.minecraft.abilityslots.ability.enums.AbilityTickStatus;
 import dev.ckateptb.minecraft.abilityslots.ability.enums.ActivationMethod;
-import dev.ckateptb.minecraft.abilityslots.ability.service.AbilityInstanceService;
+import dev.ckateptb.minecraft.abilityslots.ability.lifecycle.destroy.DestroyProcessLifecycle;
 import dev.ckateptb.minecraft.abilityslots.user.AbilityUser;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -21,19 +19,18 @@ public abstract class Ability {
     protected World world;
     protected ActivationMethod activationMethod;
     private boolean locked;
-    private AbilityInstanceService service;
+    private DestroyProcessLifecycle destroyProcessLifecycle;
+    @Setter(AccessLevel.NONE)
+    private boolean destroyed;
 
     /**
-     * Вызов данного метода управляется {@link AbilityInstanceService}
      * Данный метод вызывается при соблюдении одного из описанных способов активации и управляет логикой самой активации.
      *
-     * @param activationMethod указывает какой из описанных способов активации был соблюден.
      * @return стоит ли активировать способность для дальнейшей ее обработки в tick.
      */
-    public abstract AbilityActivateStatus activate(ActivationMethod activationMethod);
+    public abstract boolean activate();
 
     /**
-     * Вызов этого метода управляется {@link AbilityInstanceService}
      * Данный метод вызывается в асинхронном потоке, вызов которого блокируется,
      * если предыдущий вызов не успел обработаться прежде чем основной поток см. {@link io.papermc.paper.util.TickThread}
      * начнет новый тик. Таким образом можно гарантировать, что основной поток не будет перегружен.
@@ -53,7 +50,17 @@ public abstract class Ability {
     public abstract void destroy(Void unused);
 
     public final void destroy() {
-        service.destroy(this);
+        if (this.destroyed) return;
+        this.destroyed = true;
+        destroyProcessLifecycle.emit(this);
+    }
+
+    public void setUser(AbilityUser user) {
+        if (this.user != null && !this.destroyed) {
+            this.user.removeAbility(this);
+            user.registerAbility(this);
+        }
+        this.user = user;
     }
 
     @Getter

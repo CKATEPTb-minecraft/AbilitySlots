@@ -44,6 +44,7 @@ public class AbilityCollisionService {
                     if (first.getUser().getUniqueId().equals(second.getUser().getUniqueId())) return false;
 //                    ICollisionDeclaration firstDeclaration = first.getCollisionDeclaration();
                     ICollisionDeclaration secondDeclaration = second.getCollisionDeclaration();
+                    if(secondDeclaration == null) return false;
 //                    boolean removeSecond = firstDeclaration.isDestruct(second);
                     boolean removeFirst = secondDeclaration.isDestruct(first);
                     if (!removeFirst/* && !removeSecond*/) return false;
