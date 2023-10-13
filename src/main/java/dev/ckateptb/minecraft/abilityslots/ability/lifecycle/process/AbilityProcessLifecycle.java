@@ -4,20 +4,25 @@ import dev.ckateptb.common.tableclothcontainer.annotation.Component;
 import dev.ckateptb.common.tableclothcontainer.annotation.PostConstruct;
 import dev.ckateptb.minecraft.abilityslots.ability.Ability;
 import dev.ckateptb.minecraft.abilityslots.ability.collision.service.AbilityCollisionService;
+import dev.ckateptb.minecraft.abilityslots.ability.declaration.IAbilityDeclaration;
 import dev.ckateptb.minecraft.abilityslots.ability.enums.AbilityTickStatus;
 import dev.ckateptb.minecraft.abilityslots.ability.lifecycle.AbstractAbilityLifecycle;
 import dev.ckateptb.minecraft.abilityslots.user.AbilityUser;
 import dev.ckateptb.minecraft.abilityslots.user.service.AbilityUserService;
 import dev.ckateptb.minecraft.nicotine.annotation.Schedule;
+import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
 import org.bukkit.Bukkit;
+import org.slf4j.helpers.MessageFormatter;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuples;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.TimeoutException;
 
 @Component
+@CustomLog
 @RequiredArgsConstructor
 public class AbilityProcessLifecycle extends AbstractAbilityLifecycle<Ability> {
     private final AbilityUserService userService;
@@ -31,7 +36,22 @@ public class AbilityProcessLifecycle extends AbstractAbilityLifecycle<Ability> {
                 .flatMap(ability -> Mono.just(ability)
                         .map(Ability::tick)
                         .timeout(Duration.ofMillis(50))
-                        .onErrorReturn(AbilityTickStatus.DESTROY)
+                        .onErrorReturn(throwable -> {
+                            IAbilityDeclaration<? extends Ability> declaration = ability.getDeclaration();
+                            String name = declaration.getName();
+                            String author = declaration.getAuthor();
+                            if (throwable instanceof TimeoutException) {
+                                log.warn("{} ability processing timed out and was destroyed to" +
+                                        " prevent lags. Contact the author {}.", name, author);
+                            } else {
+                                log.error(MessageFormatter.arrayFormat(
+                                        "There was an error processing ability {} and has" +
+                                                " been called back. Contact the author {}.",
+                                        new Object[]{declaration.getName(), declaration.getAuthor()}
+                                ).getMessage(), throwable);
+                            }
+                            return true;
+                        }, AbilityTickStatus.DESTROY)
                         .map(status -> Tuples.of(ability, status))
                 )
                 .doOnNext(objects -> objects.getT1().setLocked(false))

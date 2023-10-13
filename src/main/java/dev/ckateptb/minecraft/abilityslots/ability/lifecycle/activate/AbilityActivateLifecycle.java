@@ -10,7 +10,9 @@ import dev.ckateptb.minecraft.abilityslots.ability.sequence.annotation.AbilityAc
 import dev.ckateptb.minecraft.abilityslots.ability.sequence.service.AbilitySequenceService;
 import dev.ckateptb.minecraft.abilityslots.user.AbilityUser;
 import dev.ckateptb.minecraft.abilityslots.user.PlayerAbilityUser;
+import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.helpers.MessageFormatter;
 import reactor.core.scheduler.Schedulers;
 import reactor.util.function.Tuple3;
 import reactor.util.function.Tuples;
@@ -19,6 +21,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Component
+@CustomLog
 @RequiredArgsConstructor
 public class AbilityActivateLifecycle extends AbstractAbilityLifecycle<Tuple3<PlayerAbilityUser, IAbilityDeclaration<?>, ActivationMethod>> {
     private final AbilitySequenceService sequenceService;
@@ -56,7 +59,18 @@ public class AbilityActivateLifecycle extends AbstractAbilityLifecycle<Tuple3<Pl
                     ActivationMethod activationMethod = objects.getT3();
                     return declaration.createAbility(user, activationMethod);
                 })
-                .filter(Ability::activate)
+                .filter(ability -> {
+                    try {
+                        return ability.activate();
+                    } catch (Throwable throwable) {
+                        IAbilityDeclaration<? extends Ability> declaration = ability.getDeclaration();
+                        log.error(MessageFormatter.arrayFormat(
+                                "There was an error on ability {} was activated. Contact the author {}.",
+                                new Object[]{declaration.getName(), declaration.getAuthor()}
+                        ).getMessage(), throwable);
+                        return false;
+                    }
+                })
                 .subscribe(ability -> {
                     AbilityUser user = ability.getUser();
                     user.registerAbility(ability);
