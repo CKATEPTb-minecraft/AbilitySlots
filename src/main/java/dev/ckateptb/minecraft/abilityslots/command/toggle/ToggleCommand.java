@@ -24,7 +24,7 @@ public class ToggleCommand extends AbilitySlotsSubCommand {
         PlayerAbilityUser user = this.userService.getAbilityUser((Player) sender);
         ToggleConfig toggle = this.config.getLanguage().getCommand().getToggle();
         AbilityCommandSender commandSender = AbilityCommandSender.of(sender);
-        if(user.isAbilitiesEnabled()) {
+        if (user.isAbilitiesEnabled()) {
             user.disableAbilities();
             commandSender.sendMessage(toggle.getDisable());
         } else {

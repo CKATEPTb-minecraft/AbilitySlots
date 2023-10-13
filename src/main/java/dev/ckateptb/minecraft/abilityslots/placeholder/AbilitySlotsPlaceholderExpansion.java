@@ -58,7 +58,7 @@ public class AbilitySlotsPlaceholderExpansion extends PlaceholderExpansion {
                             .replace("(", "\\(") + "&)";
             default -> null;
         };
-        if(noPlayerResult != null) return noPlayerResult;
+        if (noPlayerResult != null) return noPlayerResult;
         if (player == null) return null;
         PlayerAbilityUser user = this.userService.getAbilityUser(player);
         return switch (params.toLowerCase()) {

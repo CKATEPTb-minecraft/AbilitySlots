@@ -24,7 +24,7 @@ public class ReloadCommand extends AbilitySlotsSubCommand {
         Player target = (Player) args[0];
         AbilityCommandSender commandSender = AbilityCommandSender.of(sender);
         ReloadConfig config = this.config.getLanguage().getCommand().getReload();
-        if(target == null) {
+        if (target == null) {
             this.plugin.reload();
             commandSender.sendMessage(PlaceholderAPI.setPlaceholders(null, config.getReply()));
         } else {

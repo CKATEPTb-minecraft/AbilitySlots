@@ -19,6 +19,7 @@ import java.util.Queue;
 public class CategoryParser implements ArgumentParser<CommandSender, AbilityCategory> {
     private final AbilityCategoryService categoryService;
     private final AbilityUserService userService;
+
     @Override
     @SuppressWarnings("all")
     public ArgumentParseResult<AbilityCategory> parse(CommandContext<CommandSender> context, Queue<String> inputQueue) {

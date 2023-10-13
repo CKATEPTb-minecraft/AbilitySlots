@@ -6,6 +6,7 @@ import org.apache.commons.lang3.Validate;
 
 public class MessageFormatter {
     private static final InkyMessage serializer = InkyMessage.inkyMessage();
+
     public static Component toComponent(String string, String... replacements) {
         Validate.isTrue(replacements.length % 2 == 0);
         Component deserialize = serializer.deserialize(string);

@@ -6,15 +6,12 @@ import dev.ckateptb.minecraft.abilityslots.ability.Ability;
 import dev.ckateptb.minecraft.abilityslots.ability.collision.service.AbilityCollisionService;
 import dev.ckateptb.minecraft.abilityslots.ability.enums.AbilityTickStatus;
 import dev.ckateptb.minecraft.abilityslots.ability.lifecycle.AbstractAbilityLifecycle;
-import dev.ckateptb.minecraft.abilityslots.ability.lifecycle.destroy.DestroyProcessLifecycle;
 import dev.ckateptb.minecraft.abilityslots.user.AbilityUser;
 import dev.ckateptb.minecraft.abilityslots.user.service.AbilityUserService;
-import dev.ckateptb.minecraft.atom.scheduler.SyncScheduler;
 import dev.ckateptb.minecraft.nicotine.annotation.Schedule;
 import lombok.RequiredArgsConstructor;
 import org.bukkit.Bukkit;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 import reactor.util.function.Tuples;
 
 import java.time.Duration;
@@ -49,13 +46,13 @@ public class AbilityProcessLifecycle extends AbstractAbilityLifecycle<Ability> {
 
     @Schedule(fixedRate = 1, initialDelay = 0, async = true)
     public void tickAsync() {
-        if(Bukkit.getServer().getTPS()[0] >= 18) return;
+        if (Bukkit.getServer().getTPS()[0] >= 18) return;
         this.tickAll();
     }
 
     @Schedule(fixedRate = 1, initialDelay = 0)
     public void tickSync() {
-        if(Bukkit.getServer().getTPS()[0] < 18) return;
+        if (Bukkit.getServer().getTPS()[0] < 18) return;
         this.tickAll();
     }
 

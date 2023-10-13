@@ -26,21 +26,21 @@ public class DisplayConfig {
             "&8Instruction: %category_ability_prefix%%ability_instruction%" +
             "&) &8-" +
             " &[%category_ability_prefix%①&]&(hover:text &7Click to bind the ability to 1 slot&)" +
-            "&(click:suggest /abilityslots bind %ability_name% 1&)"+
+            "&(click:suggest /abilityslots bind %ability_name% 1&)" +
             " &[%category_ability_prefix%②&]&(hover:text &7Click to bind the ability to 2 slot&)" +
-            "&(click:suggest /abilityslots bind %ability_name% 2&)"+
+            "&(click:suggest /abilityslots bind %ability_name% 2&)" +
             " &[%category_ability_prefix%③&]&(hover:text &7Click to bind the ability to 3 slot&)" +
-            "&(click:suggest /abilityslots bind %ability_name% 3&)"+
+            "&(click:suggest /abilityslots bind %ability_name% 3&)" +
             " &[%category_ability_prefix%④&]&(hover:text &7Click to bind the ability to 4 slot&)" +
-            "&(click:suggest /abilityslots bind %ability_name% 4&)"+
+            "&(click:suggest /abilityslots bind %ability_name% 4&)" +
             " &[%category_ability_prefix%⑤&]&(hover:text &7Click to bind the ability to 5 slot&)" +
-            "&(click:suggest /abilityslots bind %ability_name% 5&)"+
+            "&(click:suggest /abilityslots bind %ability_name% 5&)" +
             " &[%category_ability_prefix%⑥&]&(hover:text &7Click to bind the ability to 6 slot&)" +
-            "&(click:suggest /abilityslots bind %ability_name% 6&)"+
+            "&(click:suggest /abilityslots bind %ability_name% 6&)" +
             " &[%category_ability_prefix%⑦&]&(hover:text &7Click to bind the ability to 7 slot&)" +
-            "&(click:suggest /abilityslots bind %ability_name% 7&)"+
+            "&(click:suggest /abilityslots bind %ability_name% 7&)" +
             " &[%category_ability_prefix%⑧&]&(hover:text &7Click to bind the ability to 8 slot&)" +
-            "&(click:suggest /abilityslots bind %ability_name% 8&)"+
+            "&(click:suggest /abilityslots bind %ability_name% 8&)" +
             " &[%category_ability_prefix%⑨&]&(hover:text &7Click to bind the ability to 9 slot&)" +
             "&(click:suggest /abilityslots bind %ability_name% 9&)";
     private String sequence = "&8↳ &b&o&[Sequence&]&(hover:text &7Abilities created by combinations&):";

@@ -3,8 +3,6 @@ package dev.ckateptb.minecraft.abilityslots.ability.lifecycle.destroy;
 import dev.ckateptb.common.tableclothcontainer.annotation.Component;
 import dev.ckateptb.common.tableclothcontainer.annotation.PostConstruct;
 import dev.ckateptb.minecraft.abilityslots.ability.Ability;
-import dev.ckateptb.minecraft.abilityslots.ability.collision.CollidableAbility;
-import dev.ckateptb.minecraft.abilityslots.ability.declaration.IAbilityDeclaration;
 import dev.ckateptb.minecraft.abilityslots.ability.lifecycle.AbstractAbilityLifecycle;
 import dev.ckateptb.minecraft.abilityslots.event.AbilityCreateEvent;
 import dev.ckateptb.minecraft.abilityslots.user.AbilityUser;

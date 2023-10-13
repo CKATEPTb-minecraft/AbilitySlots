@@ -43,7 +43,7 @@ public class EntityAbilityTarget implements AbilityTarget, Entity {
 
     @Override
     public void setVelocity(Vector velocity, Ability ability) {
-        if(this.handle_.getHandle_() instanceof ArmorStand) {
+        if (this.handle_.getHandle_() instanceof ArmorStand) {
             return;
         }
         this.handle_.setVelocity(velocity);
