@@ -99,7 +99,6 @@ public class ExampleCategory extends AbilityCategory {
 ```java
 import dev.ckateptb.minecraft.abilityslots.ability.Ability;
 import dev.ckateptb.minecraft.abilityslots.ability.declaration.generated.annotation.AbilityDeclaration;
-import dev.ckateptb.minecraft.abilityslots.ability.enums.AbilityActivateStatus;
 import dev.ckateptb.minecraft.abilityslots.ability.enums.AbilityTickStatus;
 import dev.ckateptb.minecraft.abilityslots.ability.enums.ActivationMethod;
 import dev.ckateptb.minecraft.abilityslots.config.annotation.Configurable;
@@ -133,15 +132,15 @@ public class ExampleAbility extends Ability {
     // When a player performs one of the activation methods specified in @AbilityDeclaration
     //   this method calls, in response you must indicate whether to activate the ability
     @Override
-    public AbilityActivateStatus activate(ActivationMethod activationMethod) {
+    public boolean activate(ActivationMethod activationMethod) {
         if(activationMethod == ActivationMethod.LEFT_CLICK && this.user.removeEnergy(energyCost)) {
-            return AbilityActivateStatus.ACTIVATE;
+            return true;
         }
         if(activationMethod == ActivationMethod.SNEAK) {
             this.user.setCooldown(this.declaration, cooldown);
-            return AbilityActivateStatus.ACTIVATE;
+            return true;
         }
-        return AbilityActivateStatus.IGNORE;
+        return false;
     }
 
 
@@ -166,7 +165,6 @@ import dev.ckateptb.minecraft.abilityslots.ability.collision.CollidableAbility;
 import dev.ckateptb.minecraft.abilityslots.ability.collision.declaration.generated.annotation.CollisionDeclaration;
 import dev.ckateptb.minecraft.abilityslots.ability.collision.enums.AbilityCollisionResult;
 import dev.ckateptb.minecraft.abilityslots.ability.declaration.generated.annotation.AbilityDeclaration;
-import dev.ckateptb.minecraft.abilityslots.ability.enums.AbilityActivateStatus;
 import dev.ckateptb.minecraft.abilityslots.ability.enums.AbilityTickStatus;
 import dev.ckateptb.minecraft.abilityslots.ability.enums.ActivationMethod;
 import dev.ckateptb.minecraft.abilityslots.config.annotation.Configurable;
@@ -208,15 +206,15 @@ public class ExampleAbility extends CollidableAbility {
     // When a player performs one of the activation methods specified in @AbilityDeclaration
     //   this method calls, in response you must indicate whether to activate the ability
     @Override
-    public AbilityActivateStatus activate(ActivationMethod activationMethod) {
+    public boolean activate(ActivationMethod activationMethod) {
         if(activationMethod == ActivationMethod.LEFT_CLICK && this.user.removeEnergy(energyCost)) {
-            return AbilityActivateStatus.ACTIVATE;
+            return true;
         }
         if(activationMethod == ActivationMethod.SNEAK) {
             this.user.setCooldown(this.declaration, cooldown);
-            return AbilityActivateStatus.ACTIVATE;
+            return true;
         }
-        return AbilityActivateStatus.IGNORE;
+        return false;
     }
 
 
@@ -256,7 +254,6 @@ import dev.ckateptb.minecraft.abilityslots.ability.collision.CollidableAbility;
 import dev.ckateptb.minecraft.abilityslots.ability.collision.declaration.generated.annotation.CollisionDeclaration;
 import dev.ckateptb.minecraft.abilityslots.ability.collision.enums.AbilityCollisionResult;
 import dev.ckateptb.minecraft.abilityslots.ability.declaration.generated.annotation.AbilityDeclaration;
-import dev.ckateptb.minecraft.abilityslots.ability.enums.AbilityActivateStatus;
 import dev.ckateptb.minecraft.abilityslots.ability.enums.AbilityTickStatus;
 import dev.ckateptb.minecraft.abilityslots.ability.enums.ActivationMethod;
 import dev.ckateptb.minecraft.abilityslots.ability.sequence.annotation.AbilityAction;
@@ -306,15 +303,15 @@ public class ExampleAbility extends CollidableAbility {
     // When a player performs one of the activation methods specified in @AbilityDeclaration
     //   this method calls, in response you must indicate whether to activate the ability
     @Override
-    public AbilityActivateStatus activate(ActivationMethod activationMethod) {
+    public boolean activate(ActivationMethod activationMethod) {
         if (activationMethod == ActivationMethod.LEFT_CLICK && this.user.removeEnergy(energyCost)) {
-            return AbilityActivateStatus.ACTIVATE;
+            return true;
         }
         if (activationMethod == ActivationMethod.SNEAK) {
             this.user.setCooldown(this.declaration, cooldown);
-            return AbilityActivateStatus.ACTIVATE;
+            return true;
         }
-        return AbilityActivateStatus.IGNORE;
+        return false;
     }
 
 
