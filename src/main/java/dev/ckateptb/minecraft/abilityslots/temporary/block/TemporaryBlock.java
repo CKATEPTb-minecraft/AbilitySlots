@@ -2,8 +2,9 @@ package dev.ckateptb.minecraft.abilityslots.temporary.block;
 
 
 import dev.ckateptb.minecraft.abilityslots.AbilitySlots;
-import dev.ckateptb.minecraft.atom.scheduler.SyncScheduler;
+import dev.ckateptb.minecraft.atom.Atom;
 import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -18,6 +19,7 @@ import reactor.core.publisher.Mono;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 
+@Getter
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class TemporaryBlock {
     private final Location location;
@@ -29,10 +31,6 @@ public class TemporaryBlock {
 
     public void setType(Material material, long duration) {
         this.setBlockData(material.createBlockData(), duration);
-    }
-
-    public Location getLocation() {
-        return this.location;
     }
 
     public Block getBlock() {
@@ -57,7 +55,7 @@ public class TemporaryBlock {
                     return Mono.just(state)
                             .delayElement(Duration.of(duration, ChronoUnit.MILLIS))
                             .map(delayed -> {
-                                new SyncScheduler().schedule(() -> {
+                                Atom.syncScheduler().schedule(() -> {
                                     if (delayed.getBlockData().equals(blockData)) {
                                         delayed.removeMetadata(METADATA_KEY, AbilitySlots.getPlugin());
                                         delayed.setBlockData(original);
@@ -67,7 +65,7 @@ public class TemporaryBlock {
                                 return delayed;
                             });
                 })
-                .subscribeOn(new SyncScheduler())
+                .subscribeOn(Atom.syncScheduler())
                 .subscribe();
     }
 

@@ -2,8 +2,6 @@ package dev.ckateptb.minecraft.abilityslots.entity;
 
 import dev.ckateptb.minecraft.abilityslots.ability.Ability;
 import dev.ckateptb.minecraft.abilityslots.ray.Ray;
-import dev.ckateptb.minecraft.atom.adapter.AdapterUtils;
-import dev.ckateptb.minecraft.atom.adapter.entity.EntityAdapter;
 import dev.ckateptb.minecraft.colliders.Collider;
 import dev.ckateptb.minecraft.colliders.Colliders;
 import dev.ckateptb.minecraft.colliders.internal.math3.util.FastMath;
@@ -26,7 +24,7 @@ import java.util.Optional;
 @Setter
 public class EntityAbilityTarget implements AbilityTarget, Entity {
     @Delegate
-    protected final EntityAdapter handle_;
+    protected final Entity handle_;
     private boolean living;
     private boolean player;
     private boolean sneaking;
@@ -40,16 +38,15 @@ public class EntityAbilityTarget implements AbilityTarget, Entity {
     private double lastFallDistance;
 
     protected EntityAbilityTarget(Entity entity) {
-        this.handle_ = AdapterUtils.adapt(entity);
+        this.handle_ = entity;
     }
 
     @Override
     public void setVelocity(Vector velocity, Ability ability) {
-        Entity handle = this.handle_.getHandle_();
-        if (handle instanceof ArmorStand ||
-                handle instanceof EnderDragon ||
-                handle instanceof DragonFireball ||
-                handle.hasMetadata("NPC")
+        if (this.handle_ instanceof ArmorStand ||
+                this.handle_ instanceof EnderDragon ||
+                this.handle_ instanceof DragonFireball ||
+                this.handle_.hasMetadata("NPC")
         ) {
             return;
         }

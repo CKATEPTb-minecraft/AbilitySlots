@@ -2,7 +2,7 @@ package dev.ckateptb.minecraft.abilityslots;
 
 import dev.ckateptb.common.tableclothcontainer.IoC;
 import dev.ckateptb.minecraft.abilityslots.event.AbilitySlotsReloadEvent;
-import dev.ckateptb.minecraft.atom.scheduler.SyncScheduler;
+import dev.ckateptb.minecraft.atom.Atom;
 import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -32,6 +32,6 @@ public class AbilitySlots extends JavaPlugin {
     }
 
     public void reload() {
-        new SyncScheduler().schedule(() -> Bukkit.getPluginManager().callEvent(new AbilitySlotsReloadEvent()));
+        Atom.syncScheduler().schedule(() -> Bukkit.getPluginManager().callEvent(new AbilitySlotsReloadEvent()));
     }
 }

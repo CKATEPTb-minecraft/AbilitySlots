@@ -1,7 +1,5 @@
 package dev.ckateptb.minecraft.abilityslots.entity;
 
-import dev.ckateptb.minecraft.atom.adapter.AdapterUtils;
-import dev.ckateptb.minecraft.atom.adapter.entity.PlayerAdapter;
 import lombok.Getter;
 import lombok.experimental.Delegate;
 import org.bukkit.entity.Player;
@@ -11,11 +9,11 @@ import java.util.Objects;
 @Getter
 public class PlayerAbilityTarget extends LivingEntityAbilityTarget implements Player {
     @Delegate
-    protected PlayerAdapter handle_;
+    protected Player handle_;
 
     protected PlayerAbilityTarget(Player player) {
         super(player);
-        this.updatePlayerAdapter(player);
+        this.updateDelegator(player);
     }
 
     @Override
@@ -27,7 +25,6 @@ public class PlayerAbilityTarget extends LivingEntityAbilityTarget implements Pl
         if (other instanceof PlayerAbilityTarget adapter) {
             other = adapter.handle_;
         }
-
         return Objects.equals(this.handle_, other);
     }
 
@@ -35,7 +32,7 @@ public class PlayerAbilityTarget extends LivingEntityAbilityTarget implements Pl
         return this.handle_.hashCode();
     }
 
-    public void updatePlayerAdapter(Player player) {
-        this.handle_ = AdapterUtils.adapt(player);
+    public void updateDelegator(Player player) {
+        this.handle_ = player;
     }
 }

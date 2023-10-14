@@ -12,7 +12,7 @@ import dev.ckateptb.minecraft.abilityslots.event.AbilitySlotsReloadEvent;
 import dev.ckateptb.minecraft.abilityslots.protection.service.ProtectionService;
 import dev.ckateptb.minecraft.abilityslots.user.AbilityUser;
 import dev.ckateptb.minecraft.abilityslots.user.PlayerAbilityUser;
-import dev.ckateptb.minecraft.atom.scheduler.SyncScheduler;
+import dev.ckateptb.minecraft.atom.Atom;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang.NotImplementedException;
@@ -51,12 +51,12 @@ public class AbilityUserService implements Listener {
 
     public synchronized PlayerAbilityUser getAbilityUser(Player player) {
         PlayerAbilityUser user = (PlayerAbilityUser) this.users.computeIfAbsent(player.getUniqueId(), key -> new PlayerAbilityUser(player, this));
-        user.updatePlayerAdapter(player);
+        user.updateDelegator(player);
         return user;
     }
 
     public synchronized void reloadAbilityUser(ReloadCommand command, Player player) {
-        new SyncScheduler().schedule(() -> {
+        Atom.syncScheduler().schedule(() -> {
             Validate.notNull(command);
             ((PlayerAbilityUser) this.users.remove(player.getUniqueId())).hideEnergyBoard();
             this.getAbilityUser(player);
