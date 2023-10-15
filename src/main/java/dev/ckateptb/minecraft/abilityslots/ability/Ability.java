@@ -55,6 +55,22 @@ public abstract class Ability {
         destroyProcessLifecycle.emit(this);
     }
 
+    public void lock() {
+        this.locked = true;
+    }
+
+    public void unlock() {
+        this.locked = false;
+    }
+
+    public boolean isLocked() {
+        return this.locked || this.destroyed;
+    }
+
+    public boolean isAccessible() {
+        return !this.isLocked();
+    }
+
     public void setUser(AbilityUser user) {
         if (this.user != null && !this.destroyed) {
             this.user.removeAbility(this);

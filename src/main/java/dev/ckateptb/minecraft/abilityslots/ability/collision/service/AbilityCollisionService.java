@@ -23,7 +23,7 @@ public class AbilityCollisionService {
     public Flux<CollidableAbility> findCollided(Collection<Ability> abilities) {
         return this.intersect(Flux.fromIterable(abilities)
                 .filter(ability -> {
-                    if (!ability.isLocked() && ability instanceof CollidableAbility collidable) {
+                    if (ability instanceof CollidableAbility collidable && ability.isAccessible()) {
                         Collection<Collider> colliders = collidable.getColliders();
                         return colliders != null && !colliders.isEmpty();
                     }

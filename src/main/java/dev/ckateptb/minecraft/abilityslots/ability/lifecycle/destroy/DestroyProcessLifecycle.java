@@ -21,7 +21,7 @@ public class DestroyProcessLifecycle extends AbstractAbilityLifecycle<Ability> i
         this.flux
                 .publishOn(Schedulers.boundedElastic())
                 .subscribe(ability -> {
-                    ability.setLocked(true);
+                    ability.lock();
                     try {
                         ability.destroy(null);
                     } catch (Throwable throwable) {
